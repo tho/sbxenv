@@ -18,7 +18,7 @@ A sandbox can reach the hosts in your global sbx policy, plus the hosts its kits
 
 A kit's hooks run in every sandbox that uses it, with the agents' network reach and credentials. `kit.allowedSources` is the list of places sbx installs kits from. Adding `github.com/tho/` lets any sbxenv file you run, including [a repo's own](#a-repos-own-sbxenvyaml), use a kit from any repo under that GitHub account, at any ref.
 
-`ref=v0.1.1` names a git tag, and whoever controls the repo can move a tag. To pin the exact code you read, replace the tag in each `ref=` with the release's commit SHA.
+`ref=v0.1.2` names a git tag, and whoever controls the repo can move a tag. To pin the exact code you read, replace the tag in each `ref=` with the release's commit SHA.
 
 ## Fetched branches
 

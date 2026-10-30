@@ -15,17 +15,17 @@ kits:
   # cursor-mixin's tags aren't monotonic: 0.1.0 (= latest) is newer but a kit
   # version, not the agent's. Read the registry descriptor before bumping.
   - docker.io/docker/sbx-kit-cursor-mixin:2026.09.18-9a7762b
-  - source: git+https://github.com/tho/sbxenv.git#ref=v0.1.1&dir=kits/config
+  - source: git+https://github.com/tho/sbxenv.git#ref=v0.1.2&dir=kits/config
     args:
       # Dotfiles repo for `chezmoi init --apply` at create, e.g. you/dotfiles
       # (forms: kits/config/config.yaml). Empty = skip.
       dotfiles: ""
-  - git+https://github.com/tho/sbxenv.git#ref=v0.1.1&dir=kits/chezmoi
-  - git+https://github.com/tho/sbxenv.git#ref=v0.1.1&dir=kits/uv
-  - source: git+https://github.com/tho/sbxenv.git#ref=v0.1.1&dir=kits/herdr
+  - git+https://github.com/tho/sbxenv.git#ref=v0.1.2&dir=kits/chezmoi
+  - git+https://github.com/tho/sbxenv.git#ref=v0.1.2&dir=kits/uv
+  - source: git+https://github.com/tho/sbxenv.git#ref=v0.1.2&dir=kits/herdr
     args:
       worktreeDir: ${{ env.projectDir }}/.worktrees
-  - git+https://github.com/tho/sbxenv.git#ref=v0.1.1&dir=kits/hunk
+  - git+https://github.com/tho/sbxenv.git#ref=v0.1.2&dir=kits/hunk
 workspace:
   path: ${{ env.projectDir }}
   clone: true
