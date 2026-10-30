@@ -1,13 +1,13 @@
 # syntax=docker/sandbox-kit:3
 schemaVersion: "3"
 displayName: sbxenv config
-description: "Cross-cutting sandbox setup: git identity, bash login shell, dotfiles apply (chezmoi) at create, herdr session-resume hooks, less and vim as the default pager and editor, git ignores for in-repo worktrees, and egress for Copilot's self-update. Declaration-only (no recipe)."
+description: "Cross-cutting sandbox setup: git identity, bash login shell, dotfiles apply (chezmoi) at create, herdr session-resume hooks, less and vim as the default pager and editor, git ignores for in-repo worktrees, Copilot and Cursor skills directories, and egress for Copilot's self-update. Declaration-only (no recipe)."
 sourceUrl: https://github.com/tho/sbxenv
 
 kind: mixin
 
 # Bump on any change, so `sbx env plan` shows the kit as changed.
-version: "1.2.0"
+version: "1.3.0"
 
 # When present, the agent mixins' hooks run first. claude-mixin and
 # codex-mixin write ~/.claude/settings.json and ~/.codex/config.toml with `>`,
@@ -37,6 +37,17 @@ capabilities:
   - type: com.docker.sandbox/git-identity@1
     optional: true
     description: Attribute commits to your Git identity
+
+  # The skills directories copilot-mixin and cursor-mixin don't declare. Their
+  # install hooks chown the ~/.copilot and ~/.cursor these binds create.
+  - type: com.docker.sandbox/agent-skills@1
+    optional: true
+    config:
+      path: /home/agent/.copilot/skills
+  - type: com.docker.sandbox/agent-skills@1
+    optional: true
+    config:
+      path: /home/agent/.cursor/skills
 
   - type: com.docker.sandbox/network-policy@1
     config:

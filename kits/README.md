@@ -43,7 +43,7 @@ Copy [`chezmoi.dockerfile`](chezmoi/chezmoi.dockerfile): an `ADD --checksum` dow
 ## Other capabilities
 
 - `network-policy@1`: `install.allow` hosts are open only while install hooks run. `runtime.allow` hosts stay open.
-- `agent-skill@1`: the skill appears in the skill directories the agent mixins declare, which Claude Code and Codex read. Its `path` can't use a create-time arg or `${{ kit.env.* }}`.
+- `agent-skill@1`: the skill appears in every skills directory the agent mixins and `kits/config` declare. Its `path` can't use a create-time arg or `${{ kit.env.* }}`.
 
 ## Bump a pinned version
 
