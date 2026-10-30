@@ -36,7 +36,7 @@ Install either a release, which needs no checkout, or a checkout, which lets you
 Download a release's `sbxenv.remote.yaml`. Its kits come from this repo on GitHub at that release:
 
 ```sh
-curl -fsSL -o ~/.sbxenv.yaml https://raw.githubusercontent.com/tho/sbxenv/v0.1.0/sbxenv.remote.yaml
+curl -fsSL -o ~/.sbxenv.yaml https://raw.githubusercontent.com/tho/sbxenv/v0.1.1/sbxenv.remote.yaml
 ```
 
 sbx installs kits only from `docker.io/` until you allow other sources. Allow this repo's owner once.
