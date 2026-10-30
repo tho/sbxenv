@@ -1,13 +1,13 @@
 # syntax=docker/sandbox-kit:3
 schemaVersion: "3"
 displayName: sbxenv config
-description: "Cross-cutting sandbox setup: git identity, bash login shell, dotfiles apply (chezmoi) at create, herdr session-resume hooks, and git ignores for in-repo worktrees. Declaration-only (no recipe)."
+description: "Cross-cutting sandbox setup: git identity, bash login shell, dotfiles apply (chezmoi) at create, herdr session-resume hooks, less and vim as the default pager and editor, git ignores for in-repo worktrees, and egress for Copilot's self-update. Declaration-only (no recipe)."
 sourceUrl: https://github.com/tho/sbxenv
 
 kind: mixin
 
 # Bump on any change, so `sbx env plan` shows the kit as changed.
-version: "1.1.0"
+version: "1.2.0"
 
 # When present, the agent mixins' hooks run first. claude-mixin and
 # codex-mixin write ~/.claude/settings.json and ~/.codex/config.toml with `>`,
@@ -54,6 +54,11 @@ capabilities:
           - deb.debian.org
           - pypi.org
           - files.pythonhosted.org
+      # copilot-mixin allows github.com but not the host its release
+      # downloads redirect to, so Copilot's self-update fails without it.
+      runtime:
+        allow:
+          - release-assets.githubusercontent.com
 
   - type: com.docker.sandbox/lifecycle@1
     config:
@@ -71,6 +76,22 @@ capabilities:
             esac
           user: "0"
           description: Make bash the agent's login shell
+
+        # Debian's git runs `pager` and `editor` when none is configured, and
+        # the image ships less and vim.basic without the alternatives their
+        # postinsts register, so `git diff` and `git commit` in a terminal
+        # fail. Registers them the same way, with the same priorities; each
+        # is skipped when the name exists or its target is missing.
+        - command: |
+            set -eu
+            for alt in pager:less:77 editor:vim.basic:30 vi:vim.basic:30 vim:vim.basic:30; do
+              name=${alt%%:*} rest=${alt#*:}
+              command -v "$name" >/dev/null && continue
+              target=$(command -v "${rest%%:*}") || continue
+              update-alternatives --quiet --install "/usr/bin/$name" "$name" "$target" "${rest#*:}"
+            done
+          user: "0"
+          description: Register less and vim.basic as the pager, editor, vi and vim alternatives
 
         # From $HOME: run_ scripts must not start in the workspace.
         # Unattended: --promptDefaults (every template prompt needs a default)
