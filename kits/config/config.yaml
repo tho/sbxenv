@@ -1,0 +1,155 @@
+# syntax=docker/sandbox-kit:3
+schemaVersion: "3"
+displayName: sbxenv config
+description: "Cross-cutting sandbox setup: git identity, bash login shell, dotfiles apply (chezmoi) at create, herdr session-resume hooks, and git ignores for in-repo worktrees. Declaration-only (no recipe)."
+sourceUrl: https://github.com/tho/sbxenv
+
+kind: mixin
+
+# Bump on any change, so `sbx env plan` shows the kit as changed.
+version: "1.1.0"
+
+# When present, the agent mixins' hooks run first. claude-mixin and
+# codex-mixin write ~/.claude/settings.json and ~/.codex/config.toml with `>`,
+# so the dotfiles and herdr hooks below merge into those files instead of
+# being clobbered. copilot-mixin and cursor-mixin create ~/.copilot and
+# ~/.cursor, which herdr's installer needs.
+integrates: ["claude", "codex", "copilot", "cursor"]
+
+args:
+  # Passed to the hook as $SBXENV_DOTFILES, never interpolated. The pattern
+  # allows only the shorthands chezmoi expands to an HTTPS URL, or an
+  # https:// URL (no SSH key in the sandbox): user[/repo], site/user[/repo],
+  # sr.ht/~user[/repo]. No value parses as a flag or a local path.
+  dotfiles:
+    default: ""
+    pattern: '^$|^[A-Za-z0-9][A-Za-z0-9-]*(/\.?[A-Za-z0-9_][A-Za-z0-9._-]*)?$|^[A-Za-z0-9][A-Za-z0-9.-]*/[A-Za-z0-9][A-Za-z0-9-]*(/[A-Za-z0-9][A-Za-z0-9.-]*)?$|^sr\.ht/~[A-Za-z0-9-]+(/[A-Za-z0-9-]+)?$|^https://[A-Za-z0-9][A-Za-z0-9.-]*(:[0-9]+)?(/~?\.?[A-Za-z0-9_][A-Za-z0-9._-]*)+/?$'
+    description: |
+      Dotfiles repo for `chezmoi init --apply` at create, in any HTTPS form
+      chezmoi accepts: `user`, `user/repo`, `site/user[/repo]`,
+      `sr.ht/~user[/repo]` or `https://host/path`. Empty = skip.
+    env: SBXENV_DOTFILES
+
+capabilities:
+  # Host git user.name/email as the sandbox's global identity, set before
+  # hooks run (dotfiles can default their prompts from it). Optional: without
+  # both set on the host, the sandbox still starts.
+  - type: com.docker.sandbox/git-identity@1
+    optional: true
+    description: Attribute commits to your Git identity
+
+  - type: com.docker.sandbox/network-policy@1
+    config:
+      # Install phase only, for the dotfiles (this kit's own hooks need no
+      # network): GitHub clone, archive, release and raw downloads,
+      # deb.debian.org for apt-get, PyPI for `uv run --script`. Other forges
+      # need their hosts in the global sbx policy.
+      install:
+        allow:
+          - github.com
+          - codeload.github.com
+          - objects.githubusercontent.com
+          - release-assets.githubusercontent.com
+          - raw.githubusercontent.com
+          - deb.debian.org
+          - pypi.org
+          - files.pythonhosted.org
+
+  - type: com.docker.sandbox/lifecycle@1
+    config:
+      install:
+        # bash as the agent's passwd shell, matching `sbx env run`, for tools
+        # that fall back to it when $SHELL is unset (`sbx exec`; e.g. tmux).
+        # sbx's ssh endpoint still forces SHELL=/bin/sh; the herdr kit covers
+        # its panes. Replaces only sh/dash (or none), so a dotfiles-chosen
+        # shell survives.
+        - command: |
+            set -eu
+            current=$(getent passwd agent | cut -d: -f7)
+            case $current in
+              ''|/bin/sh|/usr/bin/sh|/bin/dash|/usr/bin/dash) usermod -s /bin/bash agent ;;
+            esac
+          user: "0"
+          description: Make bash the agent's login shell
+
+        # From $HOME: run_ scripts must not start in the workspace.
+        # Unattended: --promptDefaults (every template prompt needs a default)
+        # and --force (overwrite without asking). A failed apply is reported,
+        # not fatal: the sandbox still works and the command can be rerun.
+        - command: |
+            set -u
+            [ -n "${SBXENV_DOTFILES:-}" ] || exit 0
+            command -v chezmoi >/dev/null || {
+              echo "sbxenv config: dotfiles is set but chezmoi is missing; add kits/chezmoi" >&2
+              exit 0
+            }
+            export GIT_TERMINAL_PROMPT=0
+            cd "$HOME" || exit 1
+            chezmoi init --apply --no-tty --promptDefaults --force -- "$SBXENV_DOTFILES" || {
+              echo "sbxenv config: chezmoi init --apply $SBXENV_DOTFILES failed; rerun it by hand" >&2
+            }
+          user: agent
+          env: [SBXENV_DOTFILES]
+          description: chezmoi init --apply the dotfiles repo (skipped when dotfiles is empty)
+
+        # herdr's session-start hooks report the conversation id, so restored
+        # panes resume (`claude --resume`, `codex resume`, and for Copilot and
+        # Cursor their --resume; untested). Each agent only when its binary
+        # is installed (dotfiles may create ~/.<agent> anyway); offline and
+        # idempotent. Only Codex gates hooks on trust.
+        # Codex runs a hooks.json hook only once trusted. trusted_hash hashes
+        # the hook definition (herdr 0.9.5, HOME=/home/agent). If a herdr bump
+        # changes it, Codex asks once; re-pin from ~/.codex/config.toml.
+        - command: |
+            set -u
+            herdr=/usr/local/bin/herdr
+            [ -x "$herdr" ] || exit 0
+            for pair in claude:claude codex:codex copilot:copilot cursor:cursor-agent; do
+              agent=${pair%%:*}
+              command -v "${pair#*:}" >/dev/null && [ -d "$HOME/.$agent" ] || continue
+              "$herdr" integration install "$agent" </dev/null >/dev/null ||
+                echo "sbxenv config: herdr integration install $agent failed; rerun it by hand" >&2
+            done
+            key='/home/agent/.codex/hooks.json:session_start:0:0'
+            cfg=$HOME/.codex/config.toml
+            if command -v codex >/dev/null && [ -f "$HOME/.codex/hooks.json" ] && [ -f "$cfg" ] && ! grep -qF "\"$key\"" "$cfg"; then
+              printf '\n[hooks.state."%s"]\ntrusted_hash = "%s"\nenabled = true\n' "$key" \
+                'sha256:b5fa6578c23c8bc4b4917d44272087077749723e21b02049fb455229842ed6ff' >>"$cfg"
+            fi
+            exit 0
+          user: agent
+          description: Install herdr's session-resume hooks for Claude Code, Codex, Copilot and Cursor
+
+      startup:
+        # Keeps in-repo worktrees (Herdr's .worktrees/, and Claude Code's
+        # .claude/worktrees/ when claude is installed) out of `git status`
+        # and hunk. Writes every excludes file git reads: sbx's
+        # ~/.gitconfig sets ~/.gitignore_template, plus an includeIf'd file
+        # that sets ~/.gitignore_global. Startup, not install: sbx writes
+        # those after the install hooks. Only adds missing lines.
+        - command: |
+            set -eu
+            cd "$HOME"
+            files=$(
+              git config --global --path --get-all core.excludesFile || true
+              git config --global --name-only --get-regexp '^includeif\..*\.path$' | sort -u |
+                while IFS= read -r key; do
+                  git config --global --path --get-all "$key" | while IFS= read -r inc; do
+                    git config --file "$inc" --path --get-all core.excludesFile || true
+                  done
+                done
+            )
+            [ -n "$files" ] || files=$HOME/.config/git/ignore
+            dirs=.worktrees/
+            ! command -v claude >/dev/null || dirs="$dirs .claude/worktrees/"
+            printf '%s\n' "$files" | sort -u | while IFS= read -r f; do
+              [ -n "$f" ] || continue
+              mkdir -p "$(dirname "$f")"
+              touch "$f"
+              [ ! -s "$f" ] || [ -z "$(tail -c1 "$f")" ] || echo >>"$f"
+              for p in $dirs; do
+                grep -qxF "$p" "$f" || printf '%s\n' "$p" >>"$f"
+              done
+            done
+          user: agent
+          description: Add in-repo worktree directories to the global git ignore

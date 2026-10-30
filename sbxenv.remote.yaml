@@ -1,0 +1,31 @@
+# Download to ~/.sbxenv.yaml, then set your options there. sbx fetches the
+# local kits from GitHub at the release in ref=, so you need no checkout, but
+# you must allow the source once (README: Install without a checkout).
+#
+# Every ref= names the same release, the one this file was downloaded from.
+schemaVersion: "1"
+agent: sbx-kit-shell
+kits:
+  - docker.io/docker/sbx-kit-shell:1.0.0
+  # Mixin tags pin the kit (hooks, volumes, allow list) and the agent's
+  # starting version; the agents then update themselves. Bump on upgrade.
+  - docker.io/docker/sbx-kit-claude-mixin:2.1.311
+  - docker.io/docker/sbx-kit-codex-mixin:0.164.0
+  - docker.io/docker/sbx-kit-copilot-mixin:1.0.86
+  # cursor-mixin's tags aren't monotonic: 0.1.0 (= latest) is newer but a kit
+  # version, not the agent's. Read the registry descriptor before bumping.
+  - docker.io/docker/sbx-kit-cursor-mixin:2026.09.18-9a7762b
+  - source: git+https://github.com/tho/sbxenv.git#ref=v0.1.0&dir=kits/config
+    args:
+      # Dotfiles repo for `chezmoi init --apply` at create, e.g. you/dotfiles
+      # (forms: kits/config/config.yaml). Empty = skip.
+      dotfiles: ""
+  - git+https://github.com/tho/sbxenv.git#ref=v0.1.0&dir=kits/chezmoi
+  - git+https://github.com/tho/sbxenv.git#ref=v0.1.0&dir=kits/uv
+  - source: git+https://github.com/tho/sbxenv.git#ref=v0.1.0&dir=kits/herdr
+    args:
+      worktreeDir: ${{ env.projectDir }}/.worktrees
+  - git+https://github.com/tho/sbxenv.git#ref=v0.1.0&dir=kits/hunk
+workspace:
+  path: ${{ env.projectDir }}
+  clone: true

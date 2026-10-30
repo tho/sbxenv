@@ -1,0 +1,30 @@
+# syntax=docker/sandbox-kit:3
+schemaVersion: "3"
+displayName: uv
+description: "uv (https://docs.astral.sh/uv/) Python package and project manager. Ships Astral's pinned, SHA-256-verified release binaries (uv, uvx) at /usr/local/bin, ahead of sbx-kit-shell's /usr/bin/uv on PATH."
+sourceUrl: https://github.com/astral-sh/uv
+
+kind: mixin
+
+# Why: sbx-kit-shell's /usr/bin/uv aborts with "<jemalloc>: Unsupported
+# system page size" on 16K-page kernels (Apple-silicon VMs). jemalloc fixes
+# its page size at compile time; Astral builds its aarch64 releases with
+# JEMALLOC_SYS_WITH_LG_PAGE=16 (4K, 16K and 64K pages all work). No runtime
+# setting fixes it.
+#
+# Single source: args.version. The recipe's per-arch digests pin it (another
+# version fails the build); bump = this default + both digests in
+# uv.dockerfile.
+version: "${{ kit.args.version }}"
+
+args:
+  version:
+    default: "0.13.6"
+    pattern: '^[0-9]+\.[0-9]+\.[0-9]+$'
+    description: uv release to install (no leading v)
+    buildArg: UV_VERSION
+
+provides: ["uv@${{ kit.args.version }}"]
+
+# No capabilities. What uv downloads at run time (PyPI) is up to the global
+# sbx policy.

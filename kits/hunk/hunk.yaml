@@ -1,0 +1,41 @@
+# syntax=docker/sandbox-kit:3
+schemaVersion: "3"
+displayName: hunk
+description: "hunk (https://github.com/modem-dev/hunk) terminal diff reviewer. Ships the pinned, SHA-256-verified release archive (binary + skills) under /opt/hunk, and exposes its hunk-review skill to the agents."
+sourceUrl: https://github.com/modem-dev/hunk
+
+kind: mixin
+
+# Single source: args.version. The recipe's per-arch digests pin it (another
+# version fails the build); bump = this default + both digests in
+# hunk.dockerfile.
+version: "${{ kit.args.version }}"
+
+args:
+  version:
+    default: "0.24.1"
+    pattern: '^[0-9]+\.[0-9]+\.[0-9]+$'
+    description: hunk release to install (no leading v)
+    buildArg: HUNK_VERSION
+  disableUpdateNotice:
+    # An env arg rather than recipe ENV, so it can be turned off per sandbox
+    # without a rebuild. Without it the TUI polls registry.npmjs.org every
+    # 4 h; hunk checks for exactly "1".
+    default: "1"
+    enum: ["", "1"]
+    description: Set HUNK_DISABLE_UPDATE_NOTICE (empty = let hunk check npm for updates)
+    env: HUNK_DISABLE_UPDATE_NOTICE
+
+provides: ["hunk@${{ kit.args.version }}"]
+
+capabilities:
+  # The review skill from the release archive, exposed in every agent's skill
+  # directory (claude-mixin: ~/.claude/skills, codex-mixin: ~/.agents/skills).
+  # Copilot and Cursor read those directories too (untested).
+  # Optional: a composition with no skill destination still works.
+  - type: com.docker.sandbox/agent-skill@1
+    optional: true
+    name: hunk review
+    config:
+      path: /opt/hunk/skills/hunk-review
+

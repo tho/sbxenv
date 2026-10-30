@@ -1,0 +1,33 @@
+# Copy to ~/.sbxenv.yaml with this checkout's absolute path filled in, then
+# set your options there:
+#
+#   sed "s|/path/to/sbxenv|$PWD|" sbxenv.example.yaml > ~/.sbxenv.yaml
+#
+# Kit paths must be absolute: relative paths and ${{ env.fileDir }} resolve
+# against the env file's directory (~ here), and ~ is not expanded.
+schemaVersion: "1"
+agent: sbx-kit-shell
+kits:
+  - docker.io/docker/sbx-kit-shell:1.0.0
+  # Mixin tags pin the kit (hooks, volumes, allow list) and the agent's
+  # starting version; the agents then update themselves. Bump on upgrade.
+  - docker.io/docker/sbx-kit-claude-mixin:2.1.311
+  - docker.io/docker/sbx-kit-codex-mixin:0.164.0
+  - docker.io/docker/sbx-kit-copilot-mixin:1.0.86
+  # cursor-mixin's tags aren't monotonic: 0.1.0 (= latest) is newer but a kit
+  # version, not the agent's. Read the registry descriptor before bumping.
+  - docker.io/docker/sbx-kit-cursor-mixin:2026.09.18-9a7762b
+  - source: /path/to/sbxenv/kits/config
+    args:
+      # Dotfiles repo for `chezmoi init --apply` at create, e.g. you/dotfiles
+      # (forms: kits/config/config.yaml). Empty = skip.
+      dotfiles: ""
+  - /path/to/sbxenv/kits/chezmoi
+  - /path/to/sbxenv/kits/uv
+  - source: /path/to/sbxenv/kits/herdr
+    args:
+      worktreeDir: ${{ env.projectDir }}/.worktrees
+  - /path/to/sbxenv/kits/hunk
+workspace:
+  path: ${{ env.projectDir }}
+  clone: true

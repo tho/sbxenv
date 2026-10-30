@@ -1,0 +1,55 @@
+# syntax=docker/sandbox-kit:3
+schemaVersion: "3"
+displayName: herdr
+description: "herdr (https://herdr.dev) server for a Herdr saved machine. Pinned, SHA-256-verified static binary at /usr/local/bin/herdr (so `herdr machine add` skips its remote install); merges update checks off, the worktree directory and bash panes into the server config; keeps the sandbox running."
+sourceUrl: https://github.com/herdrdev/herdr
+
+kind: mixin
+
+# Single source: args.version. The recipe's per-arch digests pin it (another
+# version fails the build); bump = this default + both digests in
+# herdr.dockerfile. Keep it protocol-compatible with the host's herdr.
+version: "${{ kit.args.version }}"
+
+args:
+  version:
+    default: "0.9.5"
+    pattern: '^[0-9]+\.[0-9]+\.[0-9]+$'
+    description: herdr release to install (no leading v)
+    buildArg: HERDR_VERSION
+  worktreeDir:
+    # Create-phase (no buildArg), so per-repo values don't rebuild. Herdr
+    # appends <repo>/<branch>. Pattern: ~, ~/… or absolute (herdr expands
+    # only ~), and no " \ or control characters (it lands in a TOML string).
+    default: "~/.herdr/worktrees"
+    pattern: '^(~|~/[^"\\\x00-\x1f\x7f]*|/[^"\\\x00-\x1f\x7f]*)$'
+    description: |
+      Herdr [worktrees] directory. The profile passes <clone>/.worktrees so
+      worktrees land on the workspace disk instead of the 20 GB root disk.
+
+provides: ["herdr@${{ kit.args.version }}"]
+
+capabilities:
+  # Without this the sandbox stops 30 s after its last session (exec, attach,
+  # ssh) disconnects, taking the herdr server and every agent with it.
+  - type: com.docker.sandbox/long-running@1
+
+  - type: com.docker.sandbox/lifecycle@1
+    config:
+      # Startup, not install: in sbx it runs after every install hook,
+      # including a dotfiles apply that writes the same file, and re-applies
+      # on each boot.
+      # Merge, not overwrite, so the file's other keys stay. Update checks off
+      # (the image has curl; the server would poll herdr.dev). default_shell:
+      # sbx's ssh endpoint forces SHELL=/bin/sh, which panes would inherit.
+      # Argv form: the arg arrives as $1, never parsed by a shell. A failed
+      # merge is reported, not fatal.
+      startup:
+        - command:
+            - sh
+            - -c
+            - '/usr/local/lib/herdr-kit/merge-config "$1" || echo "herdr kit: config merge failed; set [update], [worktrees] and [terminal] in ~/.config/herdr/config.toml by hand" >&2'
+            - merge-config
+            - "${{ kit.args.worktreeDir }}"
+          user: agent
+          description: Merge update-check, worktree and default-shell settings into the herdr server config

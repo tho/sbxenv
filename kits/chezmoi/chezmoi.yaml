@@ -1,0 +1,23 @@
+# syntax=docker/sandbox-kit:3
+schemaVersion: "3"
+displayName: chezmoi
+description: "chezmoi (https://chezmoi.io) dotfile manager. Ships a pinned, SHA-256-verified static binary at /usr/local/bin/chezmoi. Install only; kits/config applies the dotfiles."
+sourceUrl: https://github.com/twpayne/chezmoi
+
+kind: mixin
+
+# Single source: args.version. The recipe's per-arch digests pin it (another
+# version fails the build); bump = this default + both digests in
+# chezmoi.dockerfile.
+version: "${{ kit.args.version }}"
+
+args:
+  version:
+    default: "2.73.3"
+    pattern: '^[0-9]+\.[0-9]+\.[0-9]+$'
+    description: chezmoi release to install (no leading v)
+    buildArg: CHEZMOI_VERSION
+
+provides: ["chezmoi@${{ kit.args.version }}"]
+
+# No capabilities. The dotfiles apply is per-user, so it lives in kits/config.
