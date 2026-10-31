@@ -13,7 +13,7 @@ Start from the kit closest to yours:
 | Kit | Shape | Shows |
 |---|---|---|
 | [`config`](config) | descriptor only | `install` and `startup` hooks, `git-identity@1`, `network-policy@1`, `integrates` |
-| [`chezmoi`](chezmoi) | one pinned binary | the minimal recipe |
+| [`chezmoi`](chezmoi) | one pinned binary | the minimal recipe, an `env:` arg passed to an `install` hook |
 | [`uv`](uv) | two pinned binaries | shadowing a base-image binary through `PATH` order |
 | [`herdr`](herdr) | binary and a script | a create-time arg in argv, a `startup` merge hook, `long-running@1` |
 | [`hunk`](hunk) | release archive and a symlink | `agent-skill@1`, an `env:` arg |
@@ -22,7 +22,7 @@ Start from the kit closest to yours:
 
 - Write a mixin. A sandbox has exactly one workload, here `docker/sbx-kit-shell`.
 - An arg with `buildArg:` is fixed at build, so changing it rebuilds the kit. Args with `env:` or no export resolve at create. Use those for per-sandbox values, such as herdr's `worktreeDir` or hunk's `HUNK_DISABLE_UPDATE_NOTICE`.
-- Never interpolate an arg into shell code. Pass it in `env:`, as `kits/config` does, or as its own argv element, as `kits/herdr` does.
+- Never interpolate an arg into shell code. Pass it in `env:`, as `kits/chezmoi` does, or as its own argv element, as `kits/herdr` does.
 - Write each arg's `pattern` for where the value lands, such as a TOML string or a command-line argument.
 - Put fixed environment variables in the recipe's `ENV`.
 - `requires` and `integrates` both run the named kits' hooks first, and `requires` also fails the composition without them. The names match other kits' `provides`. Hooks with no such dependency run sorted by kit reference, not in list order, so local kits (`/…`) run before `docker.io/…` ones.

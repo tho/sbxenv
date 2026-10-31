@@ -17,12 +17,12 @@ kits:
   # cursor-mixin's tags aren't monotonic: 0.1.0 (= latest) is newer but a kit
   # version, not the agent's. Read the registry descriptor before bumping.
   - docker.io/docker/sbx-kit-cursor-mixin:2026.09.18-9a7762b
-  - source: /path/to/sbxenv/kits/config
+  - /path/to/sbxenv/kits/config
+  - source: /path/to/sbxenv/kits/chezmoi
     args:
       # Dotfiles repo for `chezmoi init --apply` at create, e.g. you/dotfiles
-      # (forms: kits/config/config.yaml). Empty = skip.
+      # (forms: kits/chezmoi/chezmoi.yaml). Empty = skip.
       dotfiles: ""
-  - /path/to/sbxenv/kits/chezmoi
   - /path/to/sbxenv/kits/uv
   - source: /path/to/sbxenv/kits/herdr
     args:

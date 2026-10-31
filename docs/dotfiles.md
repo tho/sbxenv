@@ -1,6 +1,6 @@
 # Dotfiles
 
-Set the `dotfiles` arg of the `kits/config` entry in `~/.sbxenv.yaml` to your dotfiles repo, such as `you/dotfiles`, and keep `kits/chezmoi` in the file. Each new sandbox then runs `chezmoi init --apply` on that repo.
+Set the `dotfiles` arg of the `kits/chezmoi` entry in `~/.sbxenv.yaml` to your dotfiles repo, such as `you/dotfiles`. Each new sandbox then runs `chezmoi init --apply` on that repo.
 
 The value can be an `https://` URL or a shorthand that chezmoi expands to one: `user`, `user/repo`, `sr.ht/~user[/repo]`, or `site/user[/repo]` such as `gitlab.com/user/repo`.
 

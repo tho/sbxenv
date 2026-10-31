@@ -14,8 +14,8 @@ Agents work in a private clone of the repo, inside a microVM.
 |---|---|
 | `docker/sbx-kit-shell` | The base sandbox: bash, git, `gh`, node and python |
 | `docker/sbx-kit-{claude,codex,copilot,cursor}-mixin` | `claude`, `codex`, `copilot` and `cursor-agent` agents |
-| [`kits/config`](kits/config) | Git identity, dotfiles and other cross-cutting setup |
-| [`kits/chezmoi`](kits/chezmoi) | [chezmoi](https://chezmoi.io), for dotfiles |
+| [`kits/config`](kits/config) | Git identity and other cross-cutting setup |
+| [`kits/chezmoi`](kits/chezmoi) | [chezmoi](https://chezmoi.io), and your dotfiles applied at create |
 | [`kits/uv`](kits/uv) | [uv](https://docs.astral.sh/uv/), because the base image's uv crashes on Apple silicon |
 | [`kits/herdr`](kits/herdr) | The [herdr](https://herdr.dev) server, which keeps the sandbox running |
 | [`kits/hunk`](kits/hunk) | [hunk](https://github.com/modem-dev/hunk) diff review, and its review skill |

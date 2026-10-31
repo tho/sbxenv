@@ -1,7 +1,7 @@
 # syntax=docker/sandbox-kit:3
 schemaVersion: "3"
 displayName: chezmoi
-description: "chezmoi (https://chezmoi.io) dotfile manager. Ships a pinned, SHA-256-verified static binary at /usr/local/bin/chezmoi. Install only; kits/config applies the dotfiles."
+description: "chezmoi (https://chezmoi.io) dotfile manager. Ships a pinned, SHA-256-verified static binary at /usr/local/bin/chezmoi, and applies your dotfiles repo at create when the dotfiles arg is set."
 sourceUrl: https://github.com/twpayne/chezmoi
 
 kind: mixin
@@ -17,7 +17,60 @@ args:
     pattern: '^[0-9]+\.[0-9]+\.[0-9]+$'
     description: chezmoi release to install (no leading v)
     buildArg: CHEZMOI_VERSION
+  # Passed to the hook as $SBXENV_DOTFILES, never interpolated. The pattern
+  # allows only the shorthands chezmoi expands to an HTTPS URL, or an
+  # https:// URL (no SSH key in the sandbox): user[/repo], site/user[/repo],
+  # sr.ht/~user[/repo]. No value parses as a flag or a local path.
+  dotfiles:
+    default: ""
+    pattern: '^$|^[A-Za-z0-9][A-Za-z0-9-]*(/\.?[A-Za-z0-9_][A-Za-z0-9._-]*)?$|^[A-Za-z0-9][A-Za-z0-9.-]*/[A-Za-z0-9][A-Za-z0-9-]*(/[A-Za-z0-9][A-Za-z0-9.-]*)?$|^sr\.ht/~[A-Za-z0-9-]+(/[A-Za-z0-9-]+)?$|^https://[A-Za-z0-9][A-Za-z0-9.-]*(:[0-9]+)?(/~?\.?[A-Za-z0-9_][A-Za-z0-9._-]*)+/?$'
+    description: |
+      Dotfiles repo for `chezmoi init --apply` at create, in any HTTPS form
+      chezmoi accepts: `user`, `user/repo`, `site/user[/repo]`,
+      `sr.ht/~user[/repo]` or `https://host/path`. Empty = skip.
+    env: SBXENV_DOTFILES
 
 provides: ["chezmoi@${{ kit.args.version }}"]
 
-# No capabilities. The dotfiles apply is per-user, so it lives in kits/config.
+# When present, the agent mixins' hooks run first. claude-mixin and
+# codex-mixin write ~/.claude/settings.json and ~/.codex/config.toml with `>`,
+# so dotfiles can merge into those files instead of being clobbered.
+integrates: ["claude", "codex", "copilot", "cursor"]
+
+capabilities:
+  - type: com.docker.sandbox/network-policy@1
+    config:
+      # Install phase only, for the dotfiles: GitHub clone, archive, release
+      # and raw downloads, deb.debian.org for apt-get, PyPI for
+      # `uv run --script`. Other forges need their hosts in the global sbx
+      # policy.
+      install:
+        allow:
+          - github.com
+          - codeload.github.com
+          - objects.githubusercontent.com
+          - release-assets.githubusercontent.com
+          - raw.githubusercontent.com
+          - deb.debian.org
+          - pypi.org
+          - files.pythonhosted.org
+
+  - type: com.docker.sandbox/lifecycle@1
+    config:
+      install:
+        # From $HOME: run_ scripts must not start in the workspace.
+        # Unattended: --promptDefaults (every template prompt needs a default)
+        # and --force (overwrite without asking). A failed apply is reported,
+        # not fatal: the sandbox still works and the command can be rerun.
+        - command: |
+            set -u
+            [ -n "${SBXENV_DOTFILES:-}" ] || exit 0
+            export GIT_TERMINAL_PROMPT=0
+            cd "$HOME" || exit 1
+            /usr/local/bin/chezmoi init --apply --no-tty --promptDefaults --force -- "$SBXENV_DOTFILES" || {
+              echo "chezmoi kit: chezmoi init --apply $SBXENV_DOTFILES failed; rerun it by hand" >&2
+            }
+          user: agent
+          env: [SBXENV_DOTFILES]
+          description: chezmoi init --apply the dotfiles repo (skipped when dotfiles is empty)
+
