@@ -13,7 +13,8 @@ Agents work in a private clone of the repo, inside a microVM.
 | Kit | Adds |
 |---|---|
 | `docker/sbx-kit-shell` | The base sandbox: bash, git, `gh`, node and python |
-| `docker/sbx-kit-{claude,codex,copilot,cursor}-mixin` | `claude`, `codex`, `copilot` and `cursor-agent` agents |
+| `docker/sbx-kit-{claude,codex}-mixin` | `claude` and `codex` agents |
+| `docker/sbx-kit-{copilot,cursor}-mixin` | `copilot` and `cursor-agent` agents. Commented out; uncomment to add them |
 | [`kits/config`](kits/config) | Git identity and other cross-cutting setup |
 | [`kits/chezmoi`](kits/chezmoi) | [chezmoi](https://chezmoi.io), and your dotfiles applied at create |
 | [`kits/uv`](kits/uv) | [uv](https://docs.astral.sh/uv/), because the base image's uv crashes on Apple silicon |
@@ -86,7 +87,7 @@ Answer the first run's approval prompt yourself. With `--force` or `--detach`, s
 You get a bash shell in the clone, at the same path as your checkout. Start an agent there:
 
 ```sh
-claude    # or codex, copilot, cursor-agent
+claude    # or codex
 ```
 
 ## Get the work back
