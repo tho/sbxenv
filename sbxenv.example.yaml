@@ -14,10 +14,8 @@ kits:
   - docker.io/docker/sbx-kit-claude-mixin:2.1.314
   - docker.io/docker/sbx-kit-codex-mixin:0.166.0
   # Docker publishes copilot-mixin, and cursor-mixin with a pinned agent, only
-  # under sbx/. docker/sbx-kit-cursor-mixin:0.1.0 installs whatever agent was
-  # current at its build. Read the registry descriptor before bumping.
-  - docker.io/sbx/copilot-mixin:1.0.86
-  # Uncomment to add Cursor.
+  # under sbx/. Read the registry descriptor before bumping.
+  # - docker.io/sbx/copilot-mixin:1.0.86
   # - docker.io/sbx/cursor-mixin:2026.09.18-9a7762b
   - /path/to/sbxenv/kits/config
   - source: /path/to/sbxenv/kits/chezmoi
