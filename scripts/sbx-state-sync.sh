@@ -36,7 +36,11 @@ while getopts ":nh" opt; do
       usage
       exit 0
       ;;
-    \?) die "unknown option -$OPTARG" ;;
+    \?)
+      printf '%s: unknown option -%s\n' "$SCRIPT_NAME" "$OPTARG" >&2
+      usage >&2
+      exit 2
+      ;;
   esac
 done
 shift $((OPTIND - 1))
@@ -62,7 +66,8 @@ remote() {
   sbx exec "$sandbox" "$@"
 }
 
-remote sh -c 'command -v rsync' >/dev/null 2>&1 ||
+remote true || die "cannot run commands in sandbox $sandbox"
+remote sh -c 'command -v rsync' >/dev/null ||
   die "no rsync in sandbox $sandbox; add kits/rsync to ~/.sbxenv.yaml and recreate it"
 
 rsync_opts=(-a --itemize-changes -e 'sbx exec -i')
@@ -79,15 +84,16 @@ heading() {
 }
 
 # Runs rsync with the common options plus "$@" and prints its itemized
-# output indented; returns rsync's exit status.
+# output indented, even when rsync fails part way; dies on rsync failure.
 run_rsync() {
-  local out
-  out=$(rsync "${rsync_opts[@]}" "$@") || return
-  if [[ -z $out ]]; then
+  local out status=0
+  out=$(rsync "${rsync_opts[@]}" "$@") || status=$?
+  if [[ -n $out ]]; then
+    printf '%s\n' "$out" | sed 's/^/   /'
+  elif [[ $status -eq 0 ]]; then
     echo "   nothing to move"
-    return 0
   fi
-  printf '%s\n' "$out" | sed 's/^/   /'
+  [[ $status -eq 0 ]] || die "rsync exited $status"
 }
 
 # Succeeds when $1 is the workspace or a path under it (worktrees included).
@@ -133,12 +139,14 @@ merge_index() {
   local slug=$1
   local host_file=$CLAUDE_HOST/$slug/$INDEX remote_file=$CLAUDE_REMOTE/$slug/$INDEX
   local h=$tmp/host s=$tmp/sandbox m=$tmp/merged base other gained
+  # awk 1 adds a missing final newline, as the merge below would,
+  # so a file lacking one doesn't count as changed
   : >"$h"
   if [[ -f $host_file ]]; then
-    cat -- "$host_file" >"$h"
+    awk 1 "$host_file" >"$h"
   fi
   # shellcheck disable=SC2016 # $1 expands in the sandbox's sh
-  remote sh -c 'if [ -f "$1" ]; then cat -- "$1"; fi' _ "$remote_file" >"$s" ||
+  remote sh -c 'if [ -f "$1" ]; then cat -- "$1"; fi' _ "$remote_file" | awk 1 >"$s" ||
     die "cannot read $remote_file in $sandbox"
   base=$h other=$s
   if [[ ! -s $h ]]; then
@@ -193,6 +201,9 @@ claude_sync() {
     [[ -d $dir ]] || continue
     slug=${dir%/}
     slug=${slug##*/}
+    # Every cwd under the workspace slugs to this prefix, so other slugs
+    # need no grep; the cwd check below weeds out siblings like repo-kits.
+    [[ $slug == "$WORKSPACE_SLUG" || $slug == "$WORKSPACE_SLUG"-* ]] || continue
     cwd=$(session_cwd "$dir")
     if [[ -n $cwd ]]; then
       owned "$cwd" || continue
