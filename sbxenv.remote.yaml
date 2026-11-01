@@ -15,18 +15,18 @@ kits:
   # under sbx/. Read the registry descriptor before bumping.
   # - docker.io/sbx/copilot-mixin:1.0.86
   # - docker.io/sbx/cursor-mixin:2026.09.18-9a7762b
-  - git+https://github.com/tho/sbxenv.git#ref=v0.3.0&dir=kits/config
-  - source: git+https://github.com/tho/sbxenv.git#ref=v0.3.0&dir=kits/chezmoi
+  - git+https://github.com/tho/sbxenv.git#ref=v0.3.1&dir=kits/config
+  - source: git+https://github.com/tho/sbxenv.git#ref=v0.3.1&dir=kits/chezmoi
     args:
       # Dotfiles repo for `chezmoi init --apply` at create, e.g. you/dotfiles
       # (forms: kits/chezmoi/chezmoi.yaml). Empty = skip.
       dotfiles: ""
-  - git+https://github.com/tho/sbxenv.git#ref=v0.3.0&dir=kits/uv
-  - source: git+https://github.com/tho/sbxenv.git#ref=v0.3.0&dir=kits/herdr
+  - git+https://github.com/tho/sbxenv.git#ref=v0.3.1&dir=kits/uv
+  - source: git+https://github.com/tho/sbxenv.git#ref=v0.3.1&dir=kits/herdr
     args:
       worktreeDir: ${{ env.projectDir }}/.worktrees
-  - git+https://github.com/tho/sbxenv.git#ref=v0.3.0&dir=kits/hunk
-  - git+https://github.com/tho/sbxenv.git#ref=v0.3.0&dir=kits/rsync
+  - git+https://github.com/tho/sbxenv.git#ref=v0.3.1&dir=kits/hunk
+  - git+https://github.com/tho/sbxenv.git#ref=v0.3.1&dir=kits/rsync
 workspace:
   path: ${{ env.projectDir }}
   clone: true
