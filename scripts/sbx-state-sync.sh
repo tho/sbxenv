@@ -180,7 +180,8 @@ claude_sync() {
   mkdir -p -- "$CLAUDE_HOST"
 
   heading "claude: pull $sandbox -> host"
-  run_rsync --update --exclude="/*/$INDEX" --backup --backup-dir="$BACKUP_DIR" \
+  # sbx's volume marker isn't Claude state
+  run_rsync --update --exclude="/*/$INDEX" --exclude=/.sbx-volume-initialized/ --backup --backup-dir="$BACKUP_DIR" \
     "$sandbox:$CLAUDE_REMOTE/" "$CLAUDE_HOST/"
   if [[ -d $BACKUP_DIR ]]; then
     echo "   replaced host files saved in $BACKUP_DIR"
