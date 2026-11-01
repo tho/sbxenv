@@ -4,9 +4,11 @@
 #   sbx-state-sync.sh [-n] SANDBOX    (-n: dry run, -h: help)
 #
 # Pull (sandbox -> host): everything under each agent's state root, newer
-# wins (rsync --update); nothing is deleted on the host.
+# wins (rsync --update); host files it replaces are kept under
+# ~/.claude/sbx-state-sync-backups/; nothing is deleted on the host.
 # Push (host -> sandbox): only sessions whose cwd is in the sandbox's
 # workspace, never overwriting (rsync --ignore-existing).
+# Memory indexes (MEMORY.md) skip both and are union-merged instead.
 #
 # Transport: rsync -e 'sbx exec -i', so the sandbox needs rsync (kits/rsync).
 # Requires sbx, jq and rsync on the host; runs under macOS's bash 3.2.
@@ -98,6 +100,13 @@ owned() {
 readonly CLAUDE_REMOTE=/home/agent/.claude/projects
 readonly CLAUDE_HOST=$HOME/.claude/projects
 readonly WORKSPACE_SLUG=${workspace//[^A-Za-z0-9]/-}
+readonly INDEX=memory/MEMORY.md
+BACKUP_DIR=$HOME/.claude/sbx-state-sync-backups/$sandbox/$(date -u +%Y%m%dT%H%M%SZ)
+readonly BACKUP_DIR
+
+tmp=$(mktemp -d) || die "cannot create a temporary directory"
+readonly tmp
+trap 'rm -rf -- "$tmp"' EXIT
 
 # Prints the first "cwd" recorded in the session transcripts under slug
 # directory $1, or nothing when there is none.
@@ -110,8 +119,59 @@ session_cwd() {
   printf '%s' "${cwd%\"}"
 }
 
+# Prints the non-blank lines of file $2 that are not in file $1.
+new_lines() {
+  awk 'FILENAME == ARGV[1] { seen[$0] = 1; next } $0 != "" && !($0 in seen)' "$1" "$2"
+}
+
+# Union-merges slug $1's MEMORY.md between the host and the sandbox: the
+# host's lines as they are, then the sandbox's other non-blank lines (the
+# sandbox's file as it is when the host has none). Lists the lines each
+# side gains (> host, < sandbox) and writes both sides unless dry run.
+# Sets the caller's merged=1 when the two sides differ.
+merge_index() {
+  local slug=$1
+  local host_file=$CLAUDE_HOST/$slug/$INDEX remote_file=$CLAUDE_REMOTE/$slug/$INDEX
+  local h=$tmp/host s=$tmp/sandbox m=$tmp/merged base other gained
+  : >"$h"
+  if [[ -f $host_file ]]; then
+    cat -- "$host_file" >"$h"
+  fi
+  # shellcheck disable=SC2016 # $1 expands in the sandbox's sh
+  remote sh -c 'if [ -f "$1" ]; then cat -- "$1"; fi' _ "$remote_file" >"$s" ||
+    die "cannot read $remote_file in $sandbox"
+  base=$h other=$s
+  if [[ ! -s $h ]]; then
+    base=$s other=$h
+  fi
+  awk 'FILENAME == ARGV[1] { seen[$0] = 1; print; next }
+    $0 != "" && !seen[$0]++' "$base" "$other" >"$m"
+  if cmp -s "$m" "$h" && cmp -s "$m" "$s"; then
+    return 0
+  fi
+
+  echo "   $slug/$INDEX:"
+  gained=$(new_lines "$h" "$m")
+  [[ -z $gained ]] || printf '%s\n' "$gained" | sed 's/^/     > /'
+  gained=$(new_lines "$s" "$m")
+  [[ -z $gained ]] || printf '%s\n' "$gained" | sed 's/^/     < /'
+  merged=1
+  [[ -z $dry_run ]] || return 0
+
+  if ! cmp -s "$m" "$h"; then
+    mkdir -p -- "${host_file%/*}"
+    cat -- "$m" >"$host_file"
+  fi
+  if ! cmp -s "$m" "$s"; then
+    # shellcheck disable=SC2016 # $1 expands in the sandbox's sh
+    sbx exec -i "$sandbox" sh -c 'mkdir -p "${1%/*}" && cat >"$1"' _ "$remote_file" <"$m" ||
+      die "cannot write $remote_file in $sandbox"
+  fi
+}
+
 # Pulls every Claude slug directory from the sandbox, then pushes the host
-# slug directories that belong to the sandbox's workspace.
+# slug directories that belong to the sandbox's workspace, then merges the
+# memory indexes of both.
 claude_sync() {
   if ! remote test -d "$CLAUDE_REMOTE"; then
     heading "claude: no $CLAUDE_REMOTE in $sandbox, skipped"
@@ -120,10 +180,14 @@ claude_sync() {
   mkdir -p -- "$CLAUDE_HOST"
 
   heading "claude: pull $sandbox -> host"
-  run_rsync --update "$sandbox:$CLAUDE_REMOTE/" "$CLAUDE_HOST/"
+  run_rsync --update --exclude="/*/$INDEX" --backup --backup-dir="$BACKUP_DIR" \
+    "$sandbox:$CLAUDE_REMOTE/" "$CLAUDE_HOST/"
+  if [[ -d $BACKUP_DIR ]]; then
+    echo "   replaced host files saved in $BACKUP_DIR"
+  fi
 
   heading "claude: push host -> $sandbox (sessions in $workspace)"
-  local dir slug cwd pushed=
+  local dir slug cwd pushed='' indexed='' merged=''
   for dir in "$CLAUDE_HOST"/*/; do
     [[ -d $dir ]] || continue
     slug=${dir%/}
@@ -135,10 +199,22 @@ claude_sync() {
       [[ $slug == "$WORKSPACE_SLUG" ]] || continue
     fi
     pushed=1
+    [[ ! -f $dir$INDEX ]] || indexed+=$slug$'\n'
     echo "   $slug:"
-    run_rsync --ignore-existing "$dir" "$sandbox:$CLAUDE_REMOTE/$slug/"
+    run_rsync --ignore-existing --exclude="/$INDEX" "$dir" "$sandbox:$CLAUDE_REMOTE/$slug/"
   done
   [[ -n $pushed ]] || echo "   no slug directories for $workspace on host"
+
+  heading "claude: merge memory indexes ($INDEX)"
+  # shellcheck disable=SC2016 # $1 and $f expand in the sandbox's sh
+  indexed+=$(remote sh -c 'cd "$1" || exit
+    for f in */memory/MEMORY.md; do if [ -f "$f" ]; then echo "${f%%/*}"; fi; done' \
+    _ "$CLAUDE_REMOTE") || die "cannot list memory indexes in $sandbox"
+  # fd 3 keeps sbx exec in merge_index off the slug list
+  while IFS= read -r -u 3 slug; do
+    [[ -z $slug ]] || merge_index "$slug"
+  done 3< <(printf '%s\n' "$indexed" | sort -u)
+  [[ -n $merged ]] || echo "   nothing to move"
 }
 
 claude_sync
