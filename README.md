@@ -20,6 +20,7 @@ Agents work in a private clone of the repo, inside a microVM.
 | [`kits/uv`](kits/uv) | [uv](https://docs.astral.sh/uv/), because the base image's uv crashes on Apple silicon |
 | [`kits/herdr`](kits/herdr) | The [herdr](https://herdr.dev) server, which keeps the sandbox running |
 | [`kits/hunk`](kits/hunk) | [hunk](https://github.com/modem-dev/hunk) diff review, and its review skill |
+| [`kits/rsync`](kits/rsync) | rsync, for [`scripts/sbx-state-sync.sh`](scripts/sbx-state-sync.sh), which carries agent sessions and memory between sandbox and host |
 
 You can drop any kits you do not want or need from `~/.sbxenv.yaml`.
 
@@ -109,6 +110,7 @@ The sandbox keeps running, and holds its CPU and memory, until you stop it with 
 - [Herdr](docs/herdr.md): connect from your Mac, work in worktrees, review diffs
 - [Sandboxes](docs/sandboxes.md): names, the clone, disks, GitHub, recreating, upgrading
 - [Dotfiles](docs/dotfiles.md): apply your chezmoi repo in every new sandbox
+- [State sync](docs/state-sync.md): carry Claude Code sessions and memory between a sandbox and your Mac
 - [Security](docs/security.md): what agents can read and reach, fetched branches and a repo's own `sbxenv.yaml`
 - [Troubleshooting](docs/troubleshooting.md): error messages and their fixes
 - [Kits](kits/README.md): write a kit or bump a pinned version

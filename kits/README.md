@@ -17,6 +17,7 @@ Start from the kit closest to yours:
 | [`uv`](uv) | two pinned binaries | shadowing a base-image binary through `PATH` order |
 | [`herdr`](herdr) | binary and a script | a create-time arg in argv, a `startup` merge hook, `long-running@1` |
 | [`hunk`](hunk) | release archive and a symlink | `agent-skill@1`, an `env:` arg |
+| [`rsync`](rsync) | descriptor only | a root `install` hook that runs `apt-get`, with `network-policy@1` `install.allow` for the apt source |
 
 ## Descriptor
 

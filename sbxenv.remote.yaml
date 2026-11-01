@@ -26,6 +26,7 @@ kits:
     args:
       worktreeDir: ${{ env.projectDir }}/.worktrees
   - git+https://github.com/tho/sbxenv.git#ref=v0.2.2&dir=kits/hunk
+  - git+https://github.com/tho/sbxenv.git#ref=v0.2.2&dir=kits/rsync
 workspace:
   path: ${{ env.projectDir }}
   clone: true
