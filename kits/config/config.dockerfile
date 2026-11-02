@@ -1,13 +1,12 @@
 # syntax=docker/dockerfile:1
-# chezmoi and uv as an overlay: pinned, digest-verified static or glibc
-# binaries at /usr/local/bin/{chezmoi,uv,uvx} (layout after sbx-kits-contrib
-# mise, v3 branch). /usr/local/bin precedes /usr/bin on PATH, so uv shadows
-# sbx-kit-shell's /usr/bin/uv (see config.yaml for why).
+# chezmoi and uv as an overlay: pinned, digest-verified binaries at
+# /usr/local/bin/{chezmoi,uv,uvx}, laid out like sbx-kits-contrib's mise kit
+# (v3 branch). /usr/local/bin precedes /usr/bin on PATH, so this uv shadows
+# sbx-kit-shell's (config.yaml says why).
 #
-# Build-only base: public Debian trixie (glibc 2.41, like the sandbox),
-# pinned by digest, so host builds need no registry login (Docker's dhi.io
-# base refuses anonymous pulls). Downloads use ADD --checksum, so it needs no
-# curl. The overlay is FROM scratch.
+# The build stage's base is public Debian trixie (glibc 2.41, as in the
+# sandbox), pinned by digest, so builds need no registry login; Docker's
+# dhi.io base refuses anonymous pulls. ADD --checksum downloads, so no curl.
 ARG BASE_IMAGE=debian:trixie-slim@sha256:f6b08b09a05725f9431502d3b5714f5c4576e82c1a84fa1debe0c24a7e0c3ec4
 
 # From the descriptor (args.chezmoiVersion, args.uvVersion). No defaults, so
@@ -15,11 +14,11 @@ ARG BASE_IMAGE=debian:trixie-slim@sha256:f6b08b09a05725f9431502d3b5714f5c4576e82
 ARG CHEZMOI_VERSION
 ARG UV_VERSION
 
-# Per-arch downloads; BuildKit only builds the stages TARGETARCH selects.
+# Per-arch downloads; BuildKit builds only the stages TARGETARCH selects.
+# Digest sources and provenance checks: kits/README.md.
 #
-# chezmoi: amd64 uses the musl tarball (the plain linux_amd64 one is
-# glibc-linked); linux_arm64 is already static. Digests from
-# chezmoi_<version>_checksums.txt (cosign-signed; see kits/README.md).
+# chezmoi: the musl tarball on amd64 (linux_amd64 is glibc-linked);
+# linux_arm64 is already static.
 FROM scratch AS chezmoi-amd64
 ARG CHEZMOI_VERSION
 ADD --checksum=sha256:f2fbda5a865e2725adc42090ea6deabf3e1a4d40bfd59a8942c3ad20284b39cb \
@@ -32,9 +31,7 @@ ADD --checksum=sha256:c9e6a6e71eb5291018e161a8426d7c313cd2e8553c2ca4029511fec2a3
     https://github.com/twpayne/chezmoi/releases/download/v${CHEZMOI_VERSION}/chezmoi_${CHEZMOI_VERSION}_linux_arm64.tar.gz \
     /chezmoi.tgz
 
-# uv: the glibc builds (glibc >= 2.28; trixie has 2.41), which Astral's own
-# installer picks too. Digests from the release's <asset>.sha256 files;
-# GitHub attestations: gh attestation verify <file> -R astral-sh/uv.
+# uv: the glibc builds (glibc 2.28+), as Astral's own installer picks.
 FROM scratch AS uv-amd64
 ARG UV_VERSION
 ADD --checksum=sha256:f29c3e94ffabd7e6f3ba521dba169a9b7ec12100bf3257087f0f24f6123f3645 \
@@ -47,9 +44,8 @@ ADD --checksum=sha256:229e194255c7958d86d56e8790d969a6f74736592133f0dfd0076f754c
     https://github.com/astral-sh/uv/releases/download/${UV_VERSION}/uv-aarch64-unknown-linux-gnu.tar.gz \
     /uv.tgz
 
-# hadolint expands no build args, so it reads these stage references as
-# untagged images. Fixed upstream by hadolint PR #1264; drop these
-# ignores once a hadolint release includes it.
+# hadolint doesn't expand build args, so it reads these stage references as
+# untagged images. Drop the ignores once a release includes hadolint PR #1264.
 # hadolint ignore=DL3006
 FROM chezmoi-${TARGETARCH} AS chezmoi-dl
 # hadolint ignore=DL3006
@@ -60,10 +56,10 @@ SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 ARG CHEZMOI_VERSION
 ARG UV_VERSION
 
-# Extract each tool, then gate on its exact pin. chezmoi prints "chezmoi
-# version vX.Y.Z, commit …", hence "v<pin>"; uv prints "uv X.Y.Z (…)".
-# Builds run on 4K pages, so the uv check can't catch the jemalloc issue
-# (see config.yaml): after a uv bump, run `uv --version` in a sandbox.
+# Extract each tool, then fail unless it reports its exact pin: chezmoi
+# prints "chezmoi version vX.Y.Z, commit …", uv "uv X.Y.Z (…)". Builds run on
+# 4K pages, so this can't catch uv's jemalloc failure (config.yaml): after a
+# uv bump, run `uv --version` in a sandbox on Apple silicon.
 RUN --mount=from=chezmoi-dl,source=/chezmoi.tgz,target=/tmp/chezmoi.tgz \
     --mount=from=uv-dl,source=/uv.tgz,target=/tmp/uv.tgz <<'EOF2'
 set -eu

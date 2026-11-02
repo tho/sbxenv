@@ -6,19 +6,18 @@ sourceUrl: https://github.com/tho/sbxenv
 
 kind: mixin
 
-# Bump on any change, so `sbx env plan` shows the kit as changed. A pin bump
-# in args is a change.
-version: "4.0.0"
+# Bump on any change, pin bumps included, so `sbx env plan` shows the kit as
+# changed.
+version: "0.1.0"
 
 # Why uv: sbx-kit-shell's /usr/bin/uv aborts with "<jemalloc>: Unsupported
 # system page size" on 16K-page kernels (Apple-silicon VMs). jemalloc fixes
-# its page size at compile time; Astral builds its aarch64 releases with
-# JEMALLOC_SYS_WITH_LG_PAGE=16 (4K, 16K and 64K pages all work). No runtime
-# setting fixes it.
+# the page size at compile time, so no runtime setting helps. Astral builds
+# its aarch64 releases with JEMALLOC_SYS_WITH_LG_PAGE=16, which works on 4K,
+# 16K and 64K pages.
 #
-# Each *Version arg is pinned by the recipe's per-arch digests (another
-# version fails the build); bump = the default here + both digests in
-# config.dockerfile + version above.
+# The recipe's per-arch digests pin each *Version arg: another version fails
+# the build. To bump one, see kits/README.md.
 args:
   chezmoiVersion:
     default: "2.73.3"
@@ -30,10 +29,9 @@ args:
     pattern: '^[0-9]+\.[0-9]+\.[0-9]+$'
     description: uv release to install (no leading v)
     buildArg: UV_VERSION
-  # Passed to the hook as $SBXENV_DOTFILES, never interpolated. The pattern
-  # allows only the shorthands chezmoi expands to an HTTPS URL, or an
-  # https:// URL (no SSH key in the sandbox): user[/repo], site/user[/repo],
-  # sr.ht/~user[/repo]. No value parses as a flag or a local path.
+  # Reaches the hooks as $SBXENV_DOTFILES, never interpolated. The pattern
+  # admits only HTTPS forms, since the sandbox has no SSH key: chezmoi's
+  # shorthands and https:// URLs. No value parses as a flag or a local path.
   dotfiles:
     default: ""
     pattern: '^$|^[A-Za-z0-9][A-Za-z0-9-]*(/\.?[A-Za-z0-9_][A-Za-z0-9._-]*)?$|^[A-Za-z0-9][A-Za-z0-9.-]*/[A-Za-z0-9][A-Za-z0-9-]*(/[A-Za-z0-9][A-Za-z0-9.-]*)?$|^sr\.ht/~[A-Za-z0-9-]+(/[A-Za-z0-9-]+)?$|^https://[A-Za-z0-9][A-Za-z0-9.-]*(:[0-9]+)?(/~?\.?[A-Za-z0-9_][A-Za-z0-9._-]*)+/?$'
@@ -47,21 +45,22 @@ provides:
   - "chezmoi@${{ kit.args.chezmoiVersion }}"
   - "uv@${{ kit.args.uvVersion }}"
 
-# When present, the agent mixins' hooks run first. claude-mixin and
-# codex-mixin write ~/.claude/settings.json and ~/.codex/config.toml with `>`,
-# so dotfiles can merge into those files instead of being clobbered.
+# The agent mixins' hooks, when present, run first: claude-mixin and
+# codex-mixin overwrite ~/.claude/settings.json and ~/.codex/config.toml, so
+# the dotfiles must merge into them afterwards.
 integrates: ["claude", "codex", "copilot", "cursor"]
 
 capabilities:
-  # Host git user.name/email as the sandbox's global identity, set before
-  # hooks run (dotfiles can default their prompts from it). Optional: without
-  # both set on the host, the sandbox still starts.
+  # The host's git user.name and user.email, set before the hooks run so
+  # dotfiles prompts can default to them. Optional: the sandbox starts
+  # without them.
   - type: com.docker.sandbox/git-identity@1
     optional: true
     description: Attribute commits to your Git identity
 
-  # The skills directories copilot-mixin and cursor-mixin don't declare. Their
-  # install hooks chown the ~/.copilot and ~/.cursor these binds create.
+  # Skills directories for Copilot and Cursor, whose mixins declare none; drop
+  # these once they do. Their install hooks chown the ~/.copilot and ~/.cursor
+  # these binds create.
   - type: com.docker.sandbox/agent-skills@1
     optional: true
     config:
@@ -73,11 +72,10 @@ capabilities:
 
   - type: com.docker.sandbox/network-policy@1
     config:
-      # Install phase only: deb.debian.org for rsync's apt-get (the image
-      # also lists dhi.io, which stays blocked, so apt-get update may warn
-      # about it); for the dotfiles, GitHub clone, archive, release and raw
-      # downloads, apt-get, and PyPI for `uv run --script`. Other forges need
-      # their hosts in the global sbx policy.
+      # Open only while install hooks run: Debian for apt-get (the image's
+      # dhi.io source stays blocked, so apt-get update may warn), and for the
+      # dotfiles, GitHub clones and downloads and PyPI for `uv run --script`.
+      # Other forges need their hosts in the global sbx policy.
       install:
         allow:
           - github.com
@@ -88,9 +86,9 @@ capabilities:
           - deb.debian.org
           - pypi.org
           - files.pythonhosted.org
-      # copilot-mixin allows github.com but not the host its release
-      # downloads redirect to, so Copilot's self-update fails without it.
-      # What uv downloads at run time (PyPI) is up to the global sbx policy.
+      # For Copilot's self-update: copilot-mixin allows github.com but not
+      # the host its release downloads redirect to. uv's run-time downloads
+      # (PyPI) are left to the global sbx policy.
       runtime:
         allow:
           - release-assets.githubusercontent.com
@@ -99,9 +97,9 @@ capabilities:
   - type: com.docker.sandbox/lifecycle@1
     config:
       install:
-        # bash as the agent's passwd shell, matching `sbx env run`, for tools
-        # that fall back to it when $SHELL is unset (`sbx exec`; e.g. tmux).
-        # Replaces only sh/dash (or none), so a dotfiles-chosen shell survives.
+        # bash as the agent's passwd shell, as `sbx env run` uses, for tools
+        # that read it when $SHELL is unset (e.g. tmux under `sbx exec`).
+        # Replaces only sh, dash or none, so a dotfiles-chosen shell survives.
         - command: |
             set -eu
             current=$(getent passwd agent | cut -d: -f7)
@@ -111,11 +109,11 @@ capabilities:
           user: "0"
           description: Make bash the agent's login shell
 
-        # Debian's git runs `pager` and `editor` when none is configured, and
-        # the image ships less and vim.basic without the alternatives their
-        # postinsts register, so `git diff` and `git commit` in a terminal
-        # fail. Registers them the same way, with the same priorities; each
-        # is skipped when the name exists or its target is missing.
+        # With none configured, Debian's git runs `pager` and `editor`, but the
+        # image ships less and vim.basic without the alternatives their
+        # postinsts register, so `git diff` and `git commit` fail in a
+        # terminal. Registers them as the postinsts do, with the same
+        # priorities, skipping names that exist or targets that don't.
         - command: |
             set -eu
             for alt in pager:less:77 editor:vim.basic:30 vi:vim.basic:30 vim:vim.basic:30; do
@@ -127,12 +125,10 @@ capabilities:
           user: "0"
           description: Register less and vim.basic as the pager, editor, vi and vim alternatives
 
-        # rsync, so scripts/sbx-state-sync.sh can carry Claude Code state
-        # between the sandbox and the host with `rsync -e 'sbx exec -i'`.
-        # apt-get update may exit non-zero over the blocked dhi.io source, so
-        # the install doesn't depend on its status. The sandbox works without
-        # rsync (only the sync script needs it, and it says so when rsync is
-        # missing), so a failed install is reported, not fatal.
+        # For scripts/sbx-state-sync.sh (`rsync -e 'sbx exec -i'`). apt-get
+        # update may fail over the blocked dhi.io source, so its status is
+        # ignored. Only the sync script needs rsync, and it reports a missing
+        # one, so a failed install is reported, not fatal.
         - command: |
             set -u
             export DEBIAN_FRONTEND=noninteractive
@@ -145,11 +141,10 @@ capabilities:
           user: "0"
           description: Install rsync with apt-get
 
-        # From $HOME: sbx clones the workspace only after the install hooks,
-        # so the startup hook below handles workspace config. Unattended:
-        # --promptDefaults (every template prompt needs a default) and --force
-        # (overwrite without asking). A failed apply is reported, not fatal:
-        # the sandbox still works and the command can be rerun.
+        # From $HOME: sbx clones the workspace after the install hooks, so the
+        # startup hook below handles workspace config. --promptDefaults (every
+        # template prompt needs a default) and --force keep it unattended. A
+        # failed apply is reported, not fatal: it can be rerun.
         - command: |
             set -u
             [ -n "${SBXENV_DOTFILES:-}" ] || exit 0
@@ -163,12 +158,11 @@ capabilities:
           description: chezmoi init --apply the dotfiles repo (skipped when dotfiles is empty)
 
       startup:
-        # Keeps in-repo worktrees (.worktrees/, and Claude Code's
-        # .claude/worktrees/ when claude is installed) out of `git status`.
-        # Writes every excludes file git reads: sbx's ~/.gitconfig sets
-        # ~/.gitignore_template, plus an includeIf'd file that sets
-        # ~/.gitignore_global. Startup, not install: sbx writes those after
-        # the install hooks. Only adds missing lines.
+        # Keeps in-repo worktrees (.worktrees/, and .claude/worktrees/ when
+        # claude is installed) out of `git status`, in every excludes file git
+        # reads: sbx's ~/.gitconfig sets ~/.gitignore_template, and an
+        # includeIf'd file sets ~/.gitignore_global. Startup, because sbx
+        # writes those after the install hooks. Adds only missing lines.
         - command: |
             set -eu
             cd "$HOME"
@@ -196,10 +190,10 @@ capabilities:
           user: agent
           description: Add in-repo worktree directories to the global git ignore
 
-        # Reruns the dotfiles' scripts, not files, from the cloned workspace,
-        # so .chezmoi.commandDir is the workspace for project-level config.
-        # Skipping files keeps sbx's additions to the git config. run_ scripts
-        # run on every boot, run_once_ and run_onchange_ ones only when new or
+        # Reruns the dotfiles' scripts from the workspace, so
+        # .chezmoi.commandDir points there for project-level config. Skips
+        # files, which would undo sbx's git config additions. run_ scripts run
+        # every boot, run_once_ and run_onchange_ ones only when new or
         # changed. Only runtime egress is open.
         - command: |
             set -u
