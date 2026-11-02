@@ -58,7 +58,10 @@ capabilities:
   - type: com.docker.sandbox/lifecycle@1
     config:
       install:
-        # From $HOME: run_ scripts must not start in the workspace.
+        # From $HOME, so .chezmoi.commandDir is $HOME rather than wherever sbx
+        # starts the hook (chezmoi starts run_ scripts in the destination tree
+        # regardless). WORKSPACE_DIR passes through to the apply so dotfiles
+        # can find the workspace, e.g. for project-level agent settings.
         # Unattended: --promptDefaults (every template prompt needs a default)
         # and --force (overwrite without asking). A failed apply is reported,
         # not fatal: the sandbox still works and the command can be rerun.
@@ -71,6 +74,6 @@ capabilities:
               echo "chezmoi kit: chezmoi init --apply $SBXENV_DOTFILES failed; rerun it by hand" >&2
             }
           user: agent
-          env: [SBXENV_DOTFILES]
+          env: [SBXENV_DOTFILES, WORKSPACE_DIR]
           description: chezmoi init --apply the dotfiles repo (skipped when dotfiles is empty)
 
