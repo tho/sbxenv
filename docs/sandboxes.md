@@ -33,10 +33,10 @@ Claude Code stores its state, such as `~/.claude/projects`, in volumes tied to t
 
 ## Upgrade
 
-1. Carry the new release's changes into `~/.sbxenv.yaml`, keeping your options. Without a checkout, this shows them for a release from the [tags](https://github.com/tho/sbxenv/tags), such as `v0.2.0`:
+1. Carry the changes into `~/.sbxenv.yaml`, keeping your options. Without a checkout, this shows them, including any kit whose pinned commit moved:
 
    ```sh
-   curl -fsSL https://raw.githubusercontent.com/tho/sbxenv/v0.2.0/sbxenv.remote.yaml | diff - ~/.sbxenv.yaml
+   curl -fsSL https://raw.githubusercontent.com/tho/sbxenv/main/sbxenv.remote.yaml | diff - ~/.sbxenv.yaml
    ```
 
    From a checkout:

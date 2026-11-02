@@ -31,14 +31,14 @@ You can drop any kits you do not want or need from `~/.sbxenv.yaml`.
 
 ## Install
 
-Install either a release, which needs no checkout, or a checkout, which lets you change the kits. Both write `~/.sbxenv.yaml`.
+Install either from GitHub, which needs no checkout, or a checkout, which lets you change the kits. Both write `~/.sbxenv.yaml`.
 
 ### Without a checkout
 
-Download a release's `sbxenv.remote.yaml`. Its kits come from this repo on GitHub at that release:
+Download `sbxenv.remote.yaml`. It pins each kit to a commit of this repo on GitHub:
 
 ```sh
-curl -fsSL -o ~/.sbxenv.yaml https://raw.githubusercontent.com/tho/sbxenv/v0.3.1/sbxenv.remote.yaml
+curl -fsSL -o ~/.sbxenv.yaml https://raw.githubusercontent.com/tho/sbxenv/main/sbxenv.remote.yaml
 ```
 
 sbx installs kits only from `docker.io/` until you allow other sources. Allow this repo's owner once.

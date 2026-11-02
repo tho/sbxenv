@@ -61,21 +61,22 @@ After a herdr bump, if Codex asks to trust herdr's hook again in a new sandbox, 
 
 After a uv bump, run `uv --version` in a sandbox on Apple silicon.
 
-Bump `kits/config`'s `version` on any change to it. Docker's kits are pinned by tag in [`sbxenv.example.yaml`](../sbxenv.example.yaml) and [`sbxenv.remote.yaml`](../sbxenv.remote.yaml); read the comments there before you change one.
+Bump `version` in `kits/config` and `kits/rsync` on any change to them. A commit `ref=` carries no version, so sbx takes a kit's version from its descriptor, and the other kits' `version` follows the pinned tool's. Docker's kits are pinned by tag in [`sbxenv.example.yaml`](../sbxenv.example.yaml) and [`sbxenv.remote.yaml`](../sbxenv.remote.yaml); read the comments there before you change one.
 
 After any bump, recreate your sandboxes as [Upgrade](../docs/sandboxes.md#upgrade) describes.
 
-## Release
+## Publish
 
-`sbxenv.remote.yaml` fetches the kits at the release it names, so a kit change reaches its users only through a new release.
+Users download `sbxenv.remote.yaml` from `main`, and it pins each local kit to a full commit SHA in `ref=`: the last commit that changed that kit. A kit change reaches users only when its `ref=` moves. Move only the refs of kits that changed.
 
 1. Make any change to one env file in the other too. Outside the header comments, they differ only in how they name the local kits, and `make lint` checks that.
-2. Set every `ref=` in `sbxenv.remote.yaml` to the new tag, then run `make lint`.
-3. Commit, then tag that commit and push both:
+2. Commit the kit change. `make stale-kits` then fails, listing the kits whose `ref=` is behind `HEAD`.
+3. In a second commit, set each listed kit's `ref=` to `git log -1 --format=%H -- kits/<kit>`, and run `make lint`. A SHA can't name the commit it's in, so this has to be a separate commit.
+4. Push both commits together. A `ref=` that names an unpushed commit breaks every create from `main`.
 
-   ```sh
-   git tag v0.2.0
-   git push origin main v0.2.0
-   ```
+A `pre-push` hook runs `make stale-kits`, so a push with a stale `ref=` fails. Install it once per clone:
 
-Never move a pushed tag. Users who read a release and pinned its commit, as [Kit sources](../docs/security.md#kit-sources) suggests, would no longer match it.
+```sh
+printf '#!/bin/sh\nexec make stale-kits\n' > .git/hooks/pre-push
+chmod +x .git/hooks/pre-push
+```
