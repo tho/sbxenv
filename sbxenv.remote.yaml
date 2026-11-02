@@ -4,7 +4,7 @@
 #
 # Each ref= is the last commit that changed that kit, so refs differ.
 schemaVersion: "1"
-agent: sbxenv
+agent: sbx-kit-shell
 kits:
   - docker.io/docker/sbx-kit-shell:1.0.0
   # Mixin tags pin the kit (hooks, volumes, allow list) and the agent's
