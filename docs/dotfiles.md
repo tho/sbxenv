@@ -11,6 +11,6 @@ During the apply, the sandbox can reach GitHub, `deb.debian.org` and PyPI. Any o
 - The apply is unattended (`--promptDefaults`), so every prompt in `.chezmoi.toml.tmpl` needs a default.
 - Your git identity is set before the apply, so prompts can default to `git config --global user.name` and `user.email`.
 - The agent mixins write their settings before the apply. Merge your settings into them with `modify_` scripts.
-- The apply runs from `$HOME`. `$WORKSPACE_DIR` holds the workspace path, for dotfiles that write project-level config.
+- The apply runs from `$HOME`, before sbx clones the workspace. On every boot, the kit reruns your scripts, not your files, from the workspace with `chezmoi apply --include=scripts`, so `.chezmoi.commandDir` is the workspace. Write project-level config, such as `.claude/settings.local.json`, from a `run_` script that is safe to repeat. The rerun reaches only hosts in your runtime policy.
 - Scripts that install herdr, hunk or uv should skip the install when the tool is already on `PATH`.
 - If you manage `~/.config/herdr/config.toml`, see what the herdr kit [sets in it](herdr.md#config-in-the-sandbox).

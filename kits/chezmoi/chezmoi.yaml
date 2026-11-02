@@ -1,7 +1,7 @@
 # syntax=docker/sandbox-kit:3
 schemaVersion: "3"
 displayName: chezmoi
-description: "chezmoi (https://chezmoi.io) dotfile manager. Ships a pinned, SHA-256-verified static binary at /usr/local/bin/chezmoi, and applies your dotfiles repo at create when the dotfiles arg is set."
+description: "chezmoi (https://chezmoi.io) dotfile manager. Ships a pinned, SHA-256-verified static binary at /usr/local/bin/chezmoi, and applies your dotfiles repo at create when the dotfiles arg is set, rerunning its scripts from the workspace on every boot."
 sourceUrl: https://github.com/twpayne/chezmoi
 
 kind: mixin
@@ -58,13 +58,11 @@ capabilities:
   - type: com.docker.sandbox/lifecycle@1
     config:
       install:
-        # From $HOME, so .chezmoi.commandDir is $HOME rather than wherever sbx
-        # starts the hook (chezmoi starts run_ scripts in the destination tree
-        # regardless). WORKSPACE_DIR passes through to the apply so dotfiles
-        # can find the workspace, e.g. for project-level agent settings.
-        # Unattended: --promptDefaults (every template prompt needs a default)
-        # and --force (overwrite without asking). A failed apply is reported,
-        # not fatal: the sandbox still works and the command can be rerun.
+        # From $HOME: sbx clones the workspace only after the install hooks,
+        # so the startup hook below handles workspace config. Unattended:
+        # --promptDefaults (every template prompt needs a default) and --force
+        # (overwrite without asking). A failed apply is reported, not fatal:
+        # the sandbox still works and the command can be rerun.
         - command: |
             set -u
             [ -n "${SBXENV_DOTFILES:-}" ] || exit 0
@@ -74,6 +72,24 @@ capabilities:
               echo "chezmoi kit: chezmoi init --apply $SBXENV_DOTFILES failed; rerun it by hand" >&2
             }
           user: agent
-          env: [SBXENV_DOTFILES, WORKSPACE_DIR]
+          env: [SBXENV_DOTFILES]
           description: chezmoi init --apply the dotfiles repo (skipped when dotfiles is empty)
+
+      startup:
+        # Reruns the dotfiles' scripts, not files, from the cloned workspace,
+        # so .chezmoi.commandDir is the workspace for project-level config.
+        # Skipping files keeps sbx's additions to the git config. run_ scripts
+        # run on every boot, run_once_ and run_onchange_ ones only when new or
+        # changed. Only runtime egress is open.
+        - command: |
+            set -u
+            [ -n "${SBXENV_DOTFILES:-}" ] || exit 0
+            src=$(/usr/local/bin/chezmoi source-path 2>/dev/null) && [ -d "$src" ] || exit 0
+            cd "${WORKSPACE_DIR:-.}" || exit 0
+            /usr/local/bin/chezmoi apply --include=scripts --no-tty || {
+              echo "chezmoi kit: chezmoi apply --include=scripts failed in $PWD; rerun it by hand" >&2
+            }
+          user: agent
+          env: [SBXENV_DOTFILES, WORKSPACE_DIR]
+          description: Rerun the dotfiles scripts from the workspace (skipped when dotfiles is empty)
 
