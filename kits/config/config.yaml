@@ -47,7 +47,7 @@ provides:
 
 # The agent mixins' hooks, when present, run first: claude-mixin and
 # codex-mixin overwrite ~/.claude/settings.json and ~/.codex/config.toml, so
-# the dotfiles must merge into them afterwards.
+# dotfiles that edit either file aren't clobbered.
 integrates: ["claude", "codex", "copilot", "cursor"]
 
 capabilities:
