@@ -6,7 +6,7 @@
 # Kit paths must be absolute: relative paths and ${{ env.fileDir }} resolve
 # against the env file's directory (~ here), and ~ is not expanded.
 schemaVersion: "1"
-agent: sbx-kit-shell
+agent: sbxenv
 kits:
   - docker.io/docker/sbx-kit-shell:1.0.0
   # Mixin tags pin the kit (hooks, volumes, allow list) and the agent's
