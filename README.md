@@ -18,7 +18,6 @@ Agents work in a private clone of the repo, inside a microVM.
 | [`kits/config`](kits/config) | Git identity and other cross-cutting setup |
 | [`kits/chezmoi`](kits/chezmoi) | [chezmoi](https://chezmoi.io), and your dotfiles applied at create |
 | [`kits/uv`](kits/uv) | [uv](https://docs.astral.sh/uv/), because the base image's uv crashes on Apple silicon |
-| [`kits/herdr`](kits/herdr) | The [herdr](https://herdr.dev) server, which keeps the sandbox running |
 | [`kits/hunk`](kits/hunk) | [hunk](https://github.com/modem-dev/hunk) diff review, and its review skill |
 | [`kits/rsync`](kits/rsync) | rsync, for [`scripts/sbx-state-sync.sh`](scripts/sbx-state-sync.sh), which carries agent sessions and memory between sandbox and host |
 
@@ -103,11 +102,10 @@ git branch feat-x refs/sandboxes/sbx-kit-shell-myrepo/feat-x
 
 Before you build the branch or open it in an editor, read [Fetched branches](docs/security.md#fetched-branches).
 
-The sandbox keeps running, and holds its CPU and memory, until you stop it with `sbx stop sbx-kit-shell-myrepo`, the Mac reboots or the sbx daemon restarts. A stop removes the remote. The remote will be re-created and updated when the sandbox is running.
+The sandbox stops 30 seconds after its last session, such as your `sbx env run` shell, disconnects, and agents running in it stop too. `sbx stop sbx-kit-shell-myrepo` stops it sooner. A stop removes the remote. The remote will be re-created and updated when the sandbox is running.
 
 ## Documentation
 
-- [Herdr](docs/herdr.md): connect from your Mac, work in worktrees, review diffs
 - [Sandboxes](docs/sandboxes.md): names, the clone, disks, GitHub, recreating, upgrading
 - [Dotfiles](docs/dotfiles.md): apply your chezmoi repo in every new sandbox
 - [State sync](docs/state-sync.md): carry Claude Code sessions and memory between a sandbox and your Mac

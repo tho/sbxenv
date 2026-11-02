@@ -1,21 +1,13 @@
 # syntax=docker/sandbox-kit:3
 schemaVersion: "3"
 displayName: sbxenv config
-description: "Cross-cutting sandbox setup: git identity, bash login shell, herdr session-resume hooks, less and vim as the default pager and editor, git ignores for in-repo worktrees, Copilot and Cursor skills directories, and egress for Copilot's self-update. Declaration-only (no recipe)."
+description: "Cross-cutting sandbox setup: git identity, bash login shell, less and vim as the default pager and editor, git ignores for in-repo worktrees, Copilot and Cursor skills directories, and egress for Copilot's self-update. Declaration-only (no recipe)."
 sourceUrl: https://github.com/tho/sbxenv
 
 kind: mixin
 
 # Bump on any change, so `sbx env plan` shows the kit as changed.
-version: "2.0.0"
-
-# When present, the agent mixins' and the chezmoi kit's hooks run first.
-# claude-mixin and codex-mixin write ~/.claude/settings.json and
-# ~/.codex/config.toml with `>`, and the dotfiles apply may rewrite them, so
-# the herdr hooks below merge into the final files instead of being
-# clobbered. copilot-mixin and cursor-mixin create ~/.copilot and ~/.cursor,
-# which herdr's installer needs.
-integrates: ["claude", "codex", "copilot", "cursor", "chezmoi"]
+version: "3.0.0"
 
 capabilities:
   # Host git user.name/email as the sandbox's global identity, set before
@@ -49,9 +41,7 @@ capabilities:
       install:
         # bash as the agent's passwd shell, matching `sbx env run`, for tools
         # that fall back to it when $SHELL is unset (`sbx exec`; e.g. tmux).
-        # sbx's ssh endpoint still forces SHELL=/bin/sh; the herdr kit covers
-        # its panes. Replaces only sh/dash (or none), so a dotfiles-chosen
-        # shell survives.
+        # Replaces only sh/dash (or none), so a dotfiles-chosen shell survives.
         - command: |
             set -eu
             current=$(getent passwd agent | cut -d: -f7)
@@ -77,36 +67,8 @@ capabilities:
           user: "0"
           description: Register less and vim.basic as the pager, editor, vi and vim alternatives
 
-        # herdr's session-start hooks report the conversation id, so restored
-        # panes resume (`claude --resume`, `codex resume`, and for Copilot and
-        # Cursor their --resume; untested). Each agent only when its binary
-        # is installed (dotfiles may create ~/.<agent> anyway); offline and
-        # idempotent. Only Codex gates hooks on trust.
-        # Codex runs a hooks.json hook only once trusted. trusted_hash hashes
-        # the hook definition (herdr 0.9.5, HOME=/home/agent). If a herdr bump
-        # changes it, Codex asks once; re-pin from ~/.codex/config.toml.
-        - command: |
-            set -u
-            herdr=/usr/local/bin/herdr
-            [ -x "$herdr" ] || exit 0
-            for pair in claude:claude codex:codex copilot:copilot cursor:cursor-agent; do
-              agent=${pair%%:*}
-              command -v "${pair#*:}" >/dev/null && [ -d "$HOME/.$agent" ] || continue
-              "$herdr" integration install "$agent" </dev/null >/dev/null ||
-                echo "sbxenv config: herdr integration install $agent failed; rerun it by hand" >&2
-            done
-            key='/home/agent/.codex/hooks.json:session_start:0:0'
-            cfg=$HOME/.codex/config.toml
-            if command -v codex >/dev/null && [ -f "$HOME/.codex/hooks.json" ] && [ -f "$cfg" ] && ! grep -qF "\"$key\"" "$cfg"; then
-              printf '\n[hooks.state."%s"]\ntrusted_hash = "%s"\nenabled = true\n' "$key" \
-                'sha256:b5fa6578c23c8bc4b4917d44272087077749723e21b02049fb455229842ed6ff' >>"$cfg"
-            fi
-            exit 0
-          user: agent
-          description: Install herdr's session-resume hooks for Claude Code, Codex, Copilot and Cursor
-
       startup:
-        # Keeps in-repo worktrees (Herdr's .worktrees/, and Claude Code's
+        # Keeps in-repo worktrees (.worktrees/, and Claude Code's
         # .claude/worktrees/ when claude is installed) out of `git status`
         # and hunk. Writes every excludes file git reads: sbx's
         # ~/.gitconfig sets ~/.gitignore_template, plus an includeIf'd file

@@ -24,9 +24,6 @@ kits:
       # (forms: kits/chezmoi/chezmoi.yaml). Empty = skip.
       dotfiles: ""
   - /path/to/sbxenv/kits/uv
-  - source: /path/to/sbxenv/kits/herdr
-    args:
-      worktreeDir: ${{ env.projectDir }}/.worktrees
   - /path/to/sbxenv/kits/hunk
   - /path/to/sbxenv/kits/rsync
 workspace:

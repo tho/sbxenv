@@ -29,7 +29,7 @@ The secret isn't injected on `uploads.github.com`, so `gh release upload` doesn'
 
 `sbx env rm` deletes the sandbox and its clone, so fetch first. `sbx env run` then creates a new one.
 
-Claude Code stores its state, such as `~/.claude/projects`, in volumes tied to the sandbox name. `sbx env rm` leaves them in place, and a new sandbox with the same name gets them back. The rest of `$HOME` starts fresh. For Herdr, see [After a recreate](herdr.md#after-a-recreate).
+Claude Code stores its state, such as `~/.claude/projects`, in volumes tied to the sandbox name. `sbx env rm` leaves them in place, and a new sandbox with the same name gets them back. The rest of `$HOME` starts fresh.
 
 ## Upgrade
 
@@ -49,4 +49,4 @@ Claude Code stores its state, such as `~/.claude/projects`, in volumes tied to t
 2. In every repo whose sandbox has unfetched work, run `git fetch sandbox-<name>`.
 3. Recreate each sandbox with `sbx env rm`, then `sbx env run`. An existing sandbox doesn't pick up changes to `~/.sbxenv.yaml` or the kits.
 
-If you use Herdr, upgrade it on your Mac along with `kits/herdr`. To bump a pin yourself, see [Bump a pinned version](../kits/README.md#bump-a-pinned-version).
+To bump a pin yourself, see [Bump a pinned version](../kits/README.md#bump-a-pinned-version).

@@ -12,18 +12,17 @@ Start from the kit closest to yours:
 
 | Kit | Shape | Shows |
 |---|---|---|
-| [`config`](config) | descriptor only | `install` and `startup` hooks, `git-identity@1`, `network-policy@1`, `integrates` |
+| [`config`](config) | descriptor only | `install` and `startup` hooks, `git-identity@1`, `network-policy@1` |
 | [`chezmoi`](chezmoi) | one pinned binary | the minimal recipe, an `env:` arg passed to an `install` hook |
 | [`uv`](uv) | two pinned binaries | shadowing a base-image binary through `PATH` order |
-| [`herdr`](herdr) | binary and a script | a create-time arg in argv, a `startup` merge hook, `long-running@1` |
 | [`hunk`](hunk) | release archive and a symlink | `agent-skill@1`, an `env:` arg |
 | [`rsync`](rsync) | descriptor only | a root `install` hook that runs `apt-get`, with `network-policy@1` `install.allow` for the apt source |
 
 ## Descriptor
 
 - Write a mixin. A sandbox has exactly one workload, here `docker/sbx-kit-shell`.
-- An arg with `buildArg:` is fixed at build, so changing it rebuilds the kit. Args with `env:` or no export resolve at create. Use those for per-sandbox values, such as herdr's `worktreeDir` or hunk's `HUNK_DISABLE_UPDATE_NOTICE`.
-- Never interpolate an arg into shell code. Pass it in `env:`, as `kits/chezmoi` does, or as its own argv element, as `kits/herdr` does.
+- An arg with `buildArg:` is fixed at build, so changing it rebuilds the kit. Args with `env:` or no export resolve at create. Use those for per-sandbox values, such as hunk's `HUNK_DISABLE_UPDATE_NOTICE`.
+- Never interpolate an arg into shell code. Pass it in `env:`, as `kits/chezmoi` does, or as its own argv element.
 - Write each arg's `pattern` for where the value lands, such as a TOML string or a command-line argument.
 - Put fixed environment variables in the recipe's `ENV`.
 - `requires` and `integrates` both run the named kits' hooks first, and `requires` also fails the composition without them. The names match other kits' `provides`. Hooks with no such dependency run sorted by kit reference, not in list order, so local kits (`/…`) run before `docker.io/…` ones.
@@ -37,9 +36,9 @@ Copy [`chezmoi.dockerfile`](chezmoi/chezmoi.dockerfile): an `ADD --checksum` dow
 
 - `install` hooks run once at create, in dependency order. `startup` hooks run on every boot, so they must be idempotent.
 - A hook sees only the variables it lists in `env:`, plus `PATH`, `HOME`, `TERM` and a few shell basics.
-- At create, sbx runs the `startup` hooks after all `install` hooks. Use `startup` to edit files that are written late: sbx adds `core.excludesFile` and `includeIf` to the git config after the install hooks, and the dotfiles apply may write herdr's config.
-- To share a file with dotfiles or another kit, merge into it from a hook, as `kits/herdr` does, not with `lifecycle@1` `files`. Set only your own keys, and fill preference keys only when they're missing.
-- A failing hook fails the create. If the sandbox works without what the hook does, print what failed and how to redo it, prefixed like `herdr kit:`, and carry on.
+- At create, sbx runs the `startup` hooks after all `install` hooks. Use `startup` to edit files that are written late: sbx adds `core.excludesFile` and `includeIf` to the git config after the install hooks, and the dotfiles apply may write files a kit also edits.
+- To share a file with dotfiles or another kit, merge into it from a hook, not with `lifecycle@1` `files`. Set only your own keys, and fill preference keys only when they're missing.
+- A failing hook fails the create. If the sandbox works without what the hook does, print what failed and how to redo it, prefixed like `<kit> kit:`, and carry on.
 
 ## Other capabilities
 
@@ -55,9 +54,6 @@ Change `args.version.default` in `<kit>.yaml` and both `--checksum` digests in `
 | chezmoi | `chezmoi_<ver>_checksums.txt` (`linux-musl_amd64`, `linux_arm64`) | `cosign verify-blob --key chezmoi_cosign.pub --bundle chezmoi_<ver>_checksums.txt.sigstore.json chezmoi_<ver>_checksums.txt` |
 | hunk | the release's `SHA256SUMS` | `gh attestation verify <asset> -R modem-dev/hunk` |
 | uv | the release's `<asset>.sha256` files | `gh attestation verify <asset> -R astral-sh/uv` |
-| herdr | GitHub's release asset digests | compare with `https://herdr.dev/latest.json` |
-
-After a herdr bump, if Codex asks to trust herdr's hook again in a new sandbox, copy the new `trusted_hash` for it from that sandbox's `~/.codex/config.toml` into `kits/config/config.yaml`.
 
 After a uv bump, run `uv --version` in a sandbox on Apple silicon.
 
