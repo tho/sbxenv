@@ -15,13 +15,12 @@ Start from the kit closest to yours:
 | [`config`](config) | descriptor only | `install` and `startup` hooks, `git-identity@1`, `network-policy@1` |
 | [`chezmoi`](chezmoi) | one pinned binary | the minimal recipe, an `env:` arg passed to an `install` hook |
 | [`uv`](uv) | two pinned binaries | shadowing a base-image binary through `PATH` order |
-| [`hunk`](hunk) | release archive and a symlink | `agent-skill@1`, an `env:` arg |
 | [`rsync`](rsync) | descriptor only | a root `install` hook that runs `apt-get`, with `network-policy@1` `install.allow` for the apt source |
 
 ## Descriptor
 
 - Write a mixin. A sandbox has exactly one workload, here `docker/sbx-kit-shell`.
-- An arg with `buildArg:` is fixed at build, so changing it rebuilds the kit. Args with `env:` or no export resolve at create. Use those for per-sandbox values, such as hunk's `HUNK_DISABLE_UPDATE_NOTICE`.
+- An arg with `buildArg:` is fixed at build, so changing it rebuilds the kit. Args with `env:` or no export resolve at create. Use those for per-sandbox values, such as chezmoi's `dotfiles`.
 - Never interpolate an arg into shell code. Pass it in `env:`, as `kits/chezmoi` does, or as its own argv element.
 - Write each arg's `pattern` for where the value lands, such as a TOML string or a command-line argument.
 - Put fixed environment variables in the recipe's `ENV`.
@@ -52,7 +51,6 @@ Change `args.version.default` in `<kit>.yaml` and both `--checksum` digests in `
 | Kit | Digests from | Provenance check |
 |---|---|---|
 | chezmoi | `chezmoi_<ver>_checksums.txt` (`linux-musl_amd64`, `linux_arm64`) | `cosign verify-blob --key chezmoi_cosign.pub --bundle chezmoi_<ver>_checksums.txt.sigstore.json chezmoi_<ver>_checksums.txt` |
-| hunk | the release's `SHA256SUMS` | `gh attestation verify <asset> -R modem-dev/hunk` |
 | uv | the release's `<asset>.sha256` files | `gh attestation verify <asset> -R astral-sh/uv` |
 
 After a uv bump, run `uv --version` in a sandbox on Apple silicon.

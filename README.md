@@ -18,7 +18,6 @@ Agents work in a private clone of the repo, inside a microVM.
 | [`kits/config`](kits/config) | Git identity and other cross-cutting setup |
 | [`kits/chezmoi`](kits/chezmoi) | [chezmoi](https://chezmoi.io), and your dotfiles applied at create |
 | [`kits/uv`](kits/uv) | [uv](https://docs.astral.sh/uv/), because the base image's uv crashes on Apple silicon |
-| [`kits/hunk`](kits/hunk) | [hunk](https://github.com/modem-dev/hunk) diff review, and its review skill |
 | [`kits/rsync`](kits/rsync) | rsync, for [`scripts/sbx-state-sync.sh`](scripts/sbx-state-sync.sh), which carries agent sessions and memory between sandbox and host |
 
 You can drop any kits you do not want or need from `~/.sbxenv.yaml`.
