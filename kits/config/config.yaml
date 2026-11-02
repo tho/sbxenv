@@ -1,13 +1,56 @@
 # syntax=docker/sandbox-kit:3
 schemaVersion: "3"
 displayName: sbxenv config
-description: "Cross-cutting sandbox setup: git identity, bash login shell, less and vim as the default pager and editor, git ignores for in-repo worktrees, Copilot and Cursor skills directories, and egress for Copilot's self-update. Declaration-only (no recipe)."
+description: "Sandbox setup for sbxenv: pinned, SHA-256-verified chezmoi and uv binaries at /usr/local/bin, your dotfiles applied at create when the dotfiles arg is set, rsync from Debian's repositories, git identity, bash login shell, less and vim as the default pager and editor, git ignores for in-repo worktrees, Copilot and Cursor skills directories, and egress for Copilot's self-update."
 sourceUrl: https://github.com/tho/sbxenv
 
 kind: mixin
 
-# Bump on any change, so `sbx env plan` shows the kit as changed.
-version: "3.0.0"
+# Bump on any change, so `sbx env plan` shows the kit as changed. A pin bump
+# in args is a change.
+version: "4.0.0"
+
+# Why uv: sbx-kit-shell's /usr/bin/uv aborts with "<jemalloc>: Unsupported
+# system page size" on 16K-page kernels (Apple-silicon VMs). jemalloc fixes
+# its page size at compile time; Astral builds its aarch64 releases with
+# JEMALLOC_SYS_WITH_LG_PAGE=16 (4K, 16K and 64K pages all work). No runtime
+# setting fixes it.
+#
+# Each *Version arg is pinned by the recipe's per-arch digests (another
+# version fails the build); bump = the default here + both digests in
+# config.dockerfile + version above.
+args:
+  chezmoiVersion:
+    default: "2.73.3"
+    pattern: '^[0-9]+\.[0-9]+\.[0-9]+$'
+    description: chezmoi release to install (no leading v)
+    buildArg: CHEZMOI_VERSION
+  uvVersion:
+    default: "0.13.6"
+    pattern: '^[0-9]+\.[0-9]+\.[0-9]+$'
+    description: uv release to install (no leading v)
+    buildArg: UV_VERSION
+  # Passed to the hook as $SBXENV_DOTFILES, never interpolated. The pattern
+  # allows only the shorthands chezmoi expands to an HTTPS URL, or an
+  # https:// URL (no SSH key in the sandbox): user[/repo], site/user[/repo],
+  # sr.ht/~user[/repo]. No value parses as a flag or a local path.
+  dotfiles:
+    default: ""
+    pattern: '^$|^[A-Za-z0-9][A-Za-z0-9-]*(/\.?[A-Za-z0-9_][A-Za-z0-9._-]*)?$|^[A-Za-z0-9][A-Za-z0-9.-]*/[A-Za-z0-9][A-Za-z0-9-]*(/[A-Za-z0-9][A-Za-z0-9.-]*)?$|^sr\.ht/~[A-Za-z0-9-]+(/[A-Za-z0-9-]+)?$|^https://[A-Za-z0-9][A-Za-z0-9.-]*(:[0-9]+)?(/~?\.?[A-Za-z0-9_][A-Za-z0-9._-]*)+/?$'
+    description: |
+      Dotfiles repo for `chezmoi init --apply` at create, in any HTTPS form
+      chezmoi accepts: `user`, `user/repo`, `site/user[/repo]`,
+      `sr.ht/~user[/repo]` or `https://host/path`. Empty = skip.
+    env: SBXENV_DOTFILES
+
+provides:
+  - "chezmoi@${{ kit.args.chezmoiVersion }}"
+  - "uv@${{ kit.args.uvVersion }}"
+
+# When present, the agent mixins' hooks run first. claude-mixin and
+# codex-mixin write ~/.claude/settings.json and ~/.codex/config.toml with `>`,
+# so dotfiles can merge into those files instead of being clobbered.
+integrates: ["claude", "codex", "copilot", "cursor"]
 
 capabilities:
   # Host git user.name/email as the sandbox's global identity, set before
@@ -30,12 +73,29 @@ capabilities:
 
   - type: com.docker.sandbox/network-policy@1
     config:
+      # Install phase only: deb.debian.org for rsync's apt-get (the image
+      # also lists dhi.io, which stays blocked, so apt-get update may warn
+      # about it); for the dotfiles, GitHub clone, archive, release and raw
+      # downloads, apt-get, and PyPI for `uv run --script`. Other forges need
+      # their hosts in the global sbx policy.
+      install:
+        allow:
+          - github.com
+          - codeload.github.com
+          - objects.githubusercontent.com
+          - release-assets.githubusercontent.com
+          - raw.githubusercontent.com
+          - deb.debian.org
+          - pypi.org
+          - files.pythonhosted.org
       # copilot-mixin allows github.com but not the host its release
       # downloads redirect to, so Copilot's self-update fails without it.
+      # What uv downloads at run time (PyPI) is up to the global sbx policy.
       runtime:
         allow:
           - release-assets.githubusercontent.com
 
+  # Hooks run in list order, after the agent mixins' (integrates above).
   - type: com.docker.sandbox/lifecycle@1
     config:
       install:
@@ -67,13 +127,48 @@ capabilities:
           user: "0"
           description: Register less and vim.basic as the pager, editor, vi and vim alternatives
 
+        # rsync, so scripts/sbx-state-sync.sh can carry Claude Code state
+        # between the sandbox and the host with `rsync -e 'sbx exec -i'`.
+        # apt-get update may exit non-zero over the blocked dhi.io source, so
+        # the install doesn't depend on its status. The sandbox works without
+        # rsync (only the sync script needs it, and it says so when rsync is
+        # missing), so a failed install is reported, not fatal.
+        - command: |
+            set -u
+            export DEBIAN_FRONTEND=noninteractive
+            apt-get update || true
+            apt-get install -y --no-install-recommends rsync || {
+              echo "config kit: apt-get install rsync failed; rerun it as root by hand" >&2
+            }
+            rm -rf /var/lib/apt/lists/*
+            exit 0
+          user: "0"
+          description: Install rsync with apt-get
+
+        # From $HOME: sbx clones the workspace only after the install hooks,
+        # so the startup hook below handles workspace config. Unattended:
+        # --promptDefaults (every template prompt needs a default) and --force
+        # (overwrite without asking). A failed apply is reported, not fatal:
+        # the sandbox still works and the command can be rerun.
+        - command: |
+            set -u
+            [ -n "${SBXENV_DOTFILES:-}" ] || exit 0
+            export GIT_TERMINAL_PROMPT=0
+            cd "$HOME" || exit 1
+            /usr/local/bin/chezmoi init --apply --no-tty --promptDefaults --force -- "$SBXENV_DOTFILES" || {
+              echo "config kit: chezmoi init --apply $SBXENV_DOTFILES failed; rerun it by hand" >&2
+            }
+          user: agent
+          env: [SBXENV_DOTFILES]
+          description: chezmoi init --apply the dotfiles repo (skipped when dotfiles is empty)
+
       startup:
         # Keeps in-repo worktrees (.worktrees/, and Claude Code's
-        # .claude/worktrees/ when claude is installed) out of `git status`
-        # and hunk. Writes every excludes file git reads: sbx's
-        # ~/.gitconfig sets ~/.gitignore_template, plus an includeIf'd file
-        # that sets ~/.gitignore_global. Startup, not install: sbx writes
-        # those after the install hooks. Only adds missing lines.
+        # .claude/worktrees/ when claude is installed) out of `git status`.
+        # Writes every excludes file git reads: sbx's ~/.gitconfig sets
+        # ~/.gitignore_template, plus an includeIf'd file that sets
+        # ~/.gitignore_global. Startup, not install: sbx writes those after
+        # the install hooks. Only adds missing lines.
         - command: |
             set -eu
             cd "$HOME"
@@ -100,3 +195,20 @@ capabilities:
             done
           user: agent
           description: Add in-repo worktree directories to the global git ignore
+
+        # Reruns the dotfiles' scripts, not files, from the cloned workspace,
+        # so .chezmoi.commandDir is the workspace for project-level config.
+        # Skipping files keeps sbx's additions to the git config. run_ scripts
+        # run on every boot, run_once_ and run_onchange_ ones only when new or
+        # changed. Only runtime egress is open.
+        - command: |
+            set -u
+            [ -n "${SBXENV_DOTFILES:-}" ] || exit 0
+            src=$(/usr/local/bin/chezmoi source-path 2>/dev/null) && [ -d "$src" ] || exit 0
+            cd "${WORKSPACE_DIR:-.}" || exit 0
+            /usr/local/bin/chezmoi apply --include=scripts --no-tty || {
+              echo "config kit: chezmoi apply --include=scripts failed in $PWD; rerun it by hand" >&2
+            }
+          user: agent
+          env: [SBXENV_DOTFILES, WORKSPACE_DIR]
+          description: Rerun the dotfiles scripts from the workspace (skipped when dotfiles is empty)

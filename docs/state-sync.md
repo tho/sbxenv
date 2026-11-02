@@ -6,7 +6,7 @@ Claude Code's state volumes survive `sbx env rm` for a sandbox of the same name,
 
 ## Setup
 
-- Add [`kits/rsync`](../kits/rsync) to `~/.sbxenv.yaml` and recreate the sandbox. The script's transport is `rsync -e 'sbx exec -i'`, so the sandbox needs rsync; the macOS one on your Mac is enough. No `sbx setup ssh` is needed.
+- The sandbox gets rsync from [`kits/config`](../kits/config). The script's transport is `rsync -e 'sbx exec -i'`, so the sandbox needs rsync; the macOS one on your Mac is enough. No `sbx setup ssh` is needed.
 - Put the script on your `PATH` if you like, by symlink or copy. It needs `sbx` and `jq`.
 
 ## Usage

@@ -1,8 +1,8 @@
 # Download to ~/.sbxenv.yaml, then set your options there. sbx fetches the
-# local kits from GitHub at the commit in ref=, so you need no checkout, but
+# local kit from GitHub at the commit in ref=, so you need no checkout, but
 # you must allow the source once (README: Install without a checkout).
 #
-# Each ref= is the last commit that changed that kit, so refs differ.
+# ref= is the last commit that changed kits/config.
 schemaVersion: "1"
 agent: sbx-kit-shell
 kits:
@@ -15,14 +15,11 @@ kits:
   # under sbx/. Read the registry descriptor before bumping.
   # - docker.io/sbx/copilot-mixin:1.0.86
   # - docker.io/sbx/cursor-mixin:2026.09.18-9a7762b
-  - git+https://github.com/tho/sbxenv.git#ref=1c5230ffc98eb4c2048e1e81e2930b81d2a53bb3&dir=kits/config
-  - source: git+https://github.com/tho/sbxenv.git#ref=89248eff60683ec242be911e7e991725f6ed209a&dir=kits/chezmoi
+  - source: git+https://github.com/tho/sbxenv.git#ref=1c5230ffc98eb4c2048e1e81e2930b81d2a53bb3&dir=kits/config
     args:
       # Dotfiles repo for `chezmoi init --apply` at create, e.g. you/dotfiles
-      # (forms: kits/chezmoi/chezmoi.yaml). Empty = skip.
+      # (forms: kits/config/config.yaml). Empty = skip.
       dotfiles: ""
-  - git+https://github.com/tho/sbxenv.git#ref=668c25921af267bdd25de2bb48ac28b42ea25ac2&dir=kits/uv
-  - git+https://github.com/tho/sbxenv.git#ref=419782e959699b52c1072a1879b2d8922e035858&dir=kits/rsync
 workspace:
   path: ${{ env.projectDir }}
   clone: true

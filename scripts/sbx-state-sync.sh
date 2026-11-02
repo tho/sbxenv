@@ -10,7 +10,7 @@
 # workspace, never overwriting (rsync --ignore-existing).
 # Memory indexes (MEMORY.md) skip both and are union-merged instead.
 #
-# Transport: rsync -e 'sbx exec -i', so the sandbox needs rsync (kits/rsync).
+# Transport: rsync -e 'sbx exec -i', so the sandbox needs rsync (kits/config).
 # Requires sbx, jq and rsync on the host; runs under macOS's bash 3.2.
 # Read docs/state-sync.md.
 set -euo pipefail
@@ -68,7 +68,7 @@ remote() {
 
 remote true || die "cannot run commands in sandbox $sandbox"
 remote sh -c 'command -v rsync' >/dev/null ||
-  die "no rsync in sandbox $sandbox; add kits/rsync to ~/.sbxenv.yaml and recreate it"
+  die "no rsync in sandbox $sandbox; recreate it with the current kits/config"
 
 rsync_opts=(-a --itemize-changes -e 'sbx exec -i')
 mode=

@@ -15,12 +15,9 @@ Agents work in a private clone of the repo, inside a microVM.
 | `docker/sbx-kit-shell` | The base sandbox: bash, git, `gh`, node and python |
 | `docker/sbx-kit-{claude,codex}-mixin`, `sbx/copilot-mixin` | `claude`, `codex` and `copilot` agents |
 | `sbx/cursor-mixin` | The `cursor-agent` agent. Commented out; uncomment to add it |
-| [`kits/config`](kits/config) | Git identity and other cross-cutting setup |
-| [`kits/chezmoi`](kits/chezmoi) | [chezmoi](https://chezmoi.io), and your dotfiles applied at create |
-| [`kits/uv`](kits/uv) | [uv](https://docs.astral.sh/uv/), because the base image's uv crashes on Apple silicon |
-| [`kits/rsync`](kits/rsync) | rsync, for [`scripts/sbx-state-sync.sh`](scripts/sbx-state-sync.sh), which carries agent sessions and memory between sandbox and host |
+| [`kits/config`](kits/config) | Git identity and other cross-cutting setup; [chezmoi](https://chezmoi.io), and your dotfiles applied at create; [uv](https://docs.astral.sh/uv/), because the base image's uv crashes on Apple silicon; rsync, for [`scripts/sbx-state-sync.sh`](scripts/sbx-state-sync.sh), which carries agent sessions and memory between sandbox and host |
 
-You can drop any kits you do not want or need from `~/.sbxenv.yaml`.
+You can drop any of Docker's kits you do not want or need from `~/.sbxenv.yaml`.
 
 ## Requirements
 
@@ -33,7 +30,7 @@ Install either from GitHub, which needs no checkout, or a checkout, which lets y
 
 ### Without a checkout
 
-Download `sbxenv.remote.yaml`. It pins each kit to a commit of this repo on GitHub:
+Download `sbxenv.remote.yaml`. It pins `kits/config` to a commit of this repo on GitHub:
 
 ```sh
 curl -fsSL -o ~/.sbxenv.yaml https://raw.githubusercontent.com/tho/sbxenv/main/sbxenv.remote.yaml
@@ -49,14 +46,14 @@ Read [Kit sources](docs/security.md#kit-sources) for what that allows.
 
 ### From a checkout
 
-Clone the repo and point `~/.sbxenv.yaml` at its kits:
+Clone the repo and point `~/.sbxenv.yaml` at its kit:
 
 ```sh
 git clone https://github.com/tho/sbxenv && cd sbxenv
 sed "s|/path/to/sbxenv|$PWD|" sbxenv.example.yaml > ~/.sbxenv.yaml
 ```
 
-sbx builds the kits from the checkout as it is at create, so your changes to them take effect in the next sandbox you create.
+sbx builds `kits/config` from the checkout as it is at create, so your changes to it take effect in the next sandbox you create.
 
 ### Secrets
 

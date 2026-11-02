@@ -17,14 +17,11 @@ kits:
   # under sbx/. Read the registry descriptor before bumping.
   # - docker.io/sbx/copilot-mixin:1.0.86
   # - docker.io/sbx/cursor-mixin:2026.09.18-9a7762b
-  - /path/to/sbxenv/kits/config
-  - source: /path/to/sbxenv/kits/chezmoi
+  - source: /path/to/sbxenv/kits/config
     args:
       # Dotfiles repo for `chezmoi init --apply` at create, e.g. you/dotfiles
-      # (forms: kits/chezmoi/chezmoi.yaml). Empty = skip.
+      # (forms: kits/config/config.yaml). Empty = skip.
       dotfiles: ""
-  - /path/to/sbxenv/kits/uv
-  - /path/to/sbxenv/kits/rsync
 workspace:
   path: ${{ env.projectDir }}
   clone: true
