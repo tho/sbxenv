@@ -12,7 +12,7 @@ The `github` secret still has the token's full reach, and secrets are global by 
 
 ## Network
 
-A sandbox can reach the hosts in your global sbx policy, plus the hosts its kits allow. Every process in the sandbox has that reach, not just the agents. The proxy adds a kit's credential to any request for that credential's hosts, whichever process sends it.
+A sandbox can reach the hosts in your global sbx policy, plus the hosts its kits allow, [your own](dotfiles.md#allow-more-hosts) included. Every process in the sandbox has that reach, not just the agents. The proxy adds a kit's credential to any request for that credential's hosts, whichever process sends it.
 
 ## Kit sources
 

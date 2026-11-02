@@ -103,7 +103,7 @@ The sandbox stops 30 seconds after its last session, such as your `sbx env run` 
 ## Documentation
 
 - [Sandboxes](docs/sandboxes.md): names, the clone, disks, GitHub, recreating, upgrading
-- [Dotfiles](docs/dotfiles.md): apply your chezmoi repo in every new sandbox
+- [Dotfiles](docs/dotfiles.md): apply your chezmoi repo in every new sandbox, and allow the hosts its tools need
 - [State sync](docs/state-sync.md): carry Claude Code sessions and memory between a sandbox and your Mac
 - [Security](docs/security.md): what agents can read and reach, fetched branches and a repo's own `sbxenv.yaml`
 - [Troubleshooting](docs/troubleshooting.md): error messages and their fixes

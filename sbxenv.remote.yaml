@@ -20,6 +20,10 @@ kits:
       # Dotfiles repo for `chezmoi init --apply` at create, e.g. you/dotfiles
       # (forms: kits/config/config.yaml). Empty = skip.
       dotfiles: ""
+  # Your own kit allowing hosts that your dotfiles or tools need beyond the
+  # kits' allow lists, such as an installer's download host. Absolute path
+  # (docs/dotfiles.md: Allow more hosts).
+  # - /absolute/path/to/egress
 workspace:
   path: ${{ env.projectDir }}
   clone: true
