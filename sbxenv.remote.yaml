@@ -16,7 +16,7 @@ kits:
   # - docker.io/sbx/copilot-mixin:1.0.86
   # - docker.io/sbx/cursor-mixin:2026.09.18-9a7762b
   - git+https://github.com/tho/sbxenv.git#ref=e33afd208cc99769deefead778b48eac4b6289b0&dir=kits/config
-  - source: git+https://github.com/tho/sbxenv.git#ref=b1af816951b19bf9f107e2d07a18504515c4357e&dir=kits/chezmoi
+  - source: git+https://github.com/tho/sbxenv.git#ref=89248eff60683ec242be911e7e991725f6ed209a&dir=kits/chezmoi
     args:
       # Dotfiles repo for `chezmoi init --apply` at create, e.g. you/dotfiles
       # (forms: kits/chezmoi/chezmoi.yaml). Empty = skip.
