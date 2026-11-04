@@ -8,9 +8,9 @@ kind: mixin
 
 # Bump on any change, pin bumps included, so `sbx env plan` shows the kit as
 # changed.
-version: "0.1.0"
+version: "0.1.1"
 
-# Why uv: sbx-kit-shell's /usr/bin/uv aborts with "<jemalloc>: Unsupported
+# Why uv: the shell kit's /usr/bin/uv aborts with "<jemalloc>: Unsupported
 # system page size" on 16K-page kernels (Apple-silicon VMs). jemalloc fixes
 # the page size at compile time, so no runtime setting helps. Astral builds
 # its aarch64 releases with JEMALLOC_SYS_WITH_LG_PAGE=16, which works on 4K,

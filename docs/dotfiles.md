@@ -44,5 +44,6 @@ The hosts apply only to sandboxes created from your `~/.sbxenv.yaml`. To allow a
 - The apply is unattended (`--promptDefaults`), so every prompt in `.chezmoi.toml.tmpl` needs a default.
 - Your git identity is set before the apply, so prompts can default to `git config --global user.name` and `user.email`.
 - The agent mixins write their settings before the apply. Merge your settings into them with `modify_` scripts.
+- Don't ship files under `~/.claude/projects`, `sessions`, `todos`, `shell-snapshots` or `statsig`. `sbx/claude-sessions` replaces those directories with symlinks to the shared host directory, and its install hook fails the create when one of them is a nonempty directory. It may run before or after the apply.
 - The apply runs from `$HOME`, before sbx clones the workspace. On every boot, the kit reruns your scripts, not your files, from the workspace with `chezmoi apply --include=scripts`, so `.chezmoi.commandDir` is the workspace. Write project-level config, such as `.claude/settings.local.json`, from a `run_` script that is safe to repeat. The rerun reaches only hosts in your runtime policy.
 - Scripts that install tools a kit may already provide, such as uv, should skip the install when the tool is already on `PATH`.

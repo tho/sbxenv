@@ -23,7 +23,7 @@ Patterns to copy from `config`:
 
 ## Descriptor
 
-- Write a mixin (`kind: mixin`). A sandbox has exactly one workload kit, here `docker/sbx-kit-shell`.
+- Write a mixin (`kind: mixin`). A sandbox has exactly one workload kit, here `sbx/shell`.
 - Args:
   - An arg with `buildArg:` is fixed at build, so changing it rebuilds the kit. Args with `env:`, or with no export, resolve at create. Use those for per-sandbox values, such as `dotfiles`.
   - Never interpolate an arg into shell code. Pass it in `env:`, as `config` does with `dotfiles`, or as its own argv element.
@@ -43,7 +43,7 @@ Follow [`config.dockerfile`](config/config.dockerfile):
 ## Hooks
 
 - **When:** `install` hooks run once at create. `startup` hooks run on every boot, so they must be idempotent. At create, all `install` hooks run before any `startup` hook.
-- **Order across kits:** `requires` and `integrates` both run the named kits' hooks first; `requires` also fails the composition when they're missing. The names match other kits' `provides`. Kits with no such dependency run sorted by kit reference, not in list order, so local kits (`/…`) run before `docker.io/…` ones. Within a kit, hooks run in list order.
+- **Order across kits:** `requires` and `integrates` both run the named kits' hooks first; `requires` also fails the composition when they're missing. The names match other kits' `provides`. Kits with no such dependency run sorted by kit reference, not in list order, so local kits (`/…`) run before `docker.io/…` ones, but `git+https://…` ones run after. `sbx/claude-sessions` provides no name, so `config` can't order itself against it; its install hook, which turns `~/.claude/projects` and siblings into symlinks, runs before or after `config`'s depending on how `~/.sbxenv.yaml` names `config`. Within a kit, hooks run in list order.
 - **Environment:** a hook sees only the variables in its `env:`, plus `PATH`, `HOME`, `TERM` and a few shell basics.
 - **Late files:** use `startup` to edit files written after the `install` hooks. sbx adds `core.excludesFile` and `includeIf` to the git config then, and the dotfiles apply may write files a kit also edits.
 - **Shared files:** to share a file with dotfiles or another kit, merge into it from a hook, not with `lifecycle@1` `files`. Set only your own keys, and fill preference keys only when they're missing.

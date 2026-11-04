@@ -6,15 +6,20 @@
 # Kit paths must be absolute: relative paths and ${{ env.fileDir }} resolve
 # against the env file's directory (~ here), and ~ is not expanded.
 schemaVersion: "1"
-agent: sbx-kit-shell
+agent: shell
 kits:
-  - docker.io/docker/sbx-kit-shell:1.0.0
-  # Mixin tags pin the kit (hooks, volumes, allow list) and the agent's
-  # starting version; the agents then update themselves. Bump on upgrade.
-  - docker.io/docker/sbx-kit-claude-mixin:2.1.314
-  - docker.io/docker/sbx-kit-codex-mixin:0.166.0
-  # Docker publishes copilot-mixin, and cursor-mixin with a pinned agent, only
-  # under sbx/. Read the registry descriptor before bumping.
+  # Docker publishes its kits under sbx/ since v0.51.0; the docker/sbx-kit-*
+  # kits are frozen at their last tags.
+  - docker.io/sbx/shell:1.0.3
+  # Mixin tags pin the kit (hooks, allow list) and the agent's starting
+  # version; the agents then update themselves. Bump on upgrade.
+  - docker.io/sbx/claude-mixin:2.1.318
+  # Keeps ~/.claude/projects and siblings in one host directory that every
+  # sandbox using this kit shares, and that survives sbx env rm
+  # (docs/sandboxes.md: Recreate). Drop it for a fresh $HOME every time.
+  - docker.io/sbx/claude-sessions:1.0.0
+  - docker.io/sbx/codex-mixin:0.166.0
+  # Read the registry descriptor before bumping.
   # - docker.io/sbx/copilot-mixin:1.0.86
   # - docker.io/sbx/cursor-mixin:2026.09.18-9a7762b
   - source: /path/to/sbxenv/kits/config
@@ -29,3 +34,6 @@ kits:
 workspace:
   path: ${{ env.projectDir }}
   clone: true
+# Create-time knobs, such as disk sizes (docs/sandboxes.md: Disks).
+# sandboxOptions:
+#   clonedWorkspaceSize: "100g"

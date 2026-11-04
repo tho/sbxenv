@@ -12,8 +12,10 @@ Agents work in a private clone of the repo, inside a microVM.
 
 | Kit | Adds |
 |---|---|
-| `docker/sbx-kit-shell` | The base sandbox: bash, git, `gh`, node and python |
-| `docker/sbx-kit-{claude,codex}-mixin`, `sbx/copilot-mixin` | `claude`, `codex` and `copilot` agents |
+| `sbx/shell` | The base sandbox: bash, git, `gh`, node and python |
+| `sbx/{claude,codex}-mixin` | The `claude` and `codex` agents |
+| `sbx/claude-sessions` | Keeps Claude Code's sessions and memory on your Mac, shared by every sandbox and kept across `sbx env rm` |
+| `sbx/copilot-mixin` | The `copilot` agent. Commented out; uncomment to add it |
 | `sbx/cursor-mixin` | The `cursor-agent` agent. Commented out; uncomment to add it |
 | [`kits/config`](kits/config) | Git identity and other cross-cutting setup; [chezmoi](https://chezmoi.io), and your dotfiles applied at create; [uv](https://docs.astral.sh/uv/), because the base image's uv crashes on Apple silicon; rsync, for [`scripts/sbx-state-sync.sh`](scripts/sbx-state-sync.sh), which carries agent sessions and memory between sandbox and host |
 
@@ -21,7 +23,7 @@ You can drop any of Docker's kits you do not want or need from `~/.sbxenv.yaml`.
 
 ## Requirements
 
-- macOS with [sbx](https://docs.docker.com/ai/sandboxes/) 0.50.1 or later, signed in with `sbx login`.
+- macOS with [sbx](https://docs.docker.com/ai/sandboxes/) 0.51.0 or later, signed in with `sbx login`.
 - Docker Desktop, running whenever you create a sandbox from a checkout.
 
 ## Install
@@ -91,14 +93,14 @@ claude    # or codex, copilot
 The sandbox is named after the repo's directory. While it runs, your host checkout has a remote for it. Fetch a branch and review it as usual.
 
 ```sh
-git fetch sandbox-sbx-kit-shell-myrepo
-git diff main...refs/sandboxes/sbx-kit-shell-myrepo/feat-x
-git branch feat-x refs/sandboxes/sbx-kit-shell-myrepo/feat-x
+git fetch sandbox-shell-myrepo
+git diff main...refs/sandboxes/shell-myrepo/feat-x
+git branch feat-x refs/sandboxes/shell-myrepo/feat-x
 ```
 
 Before you build the branch or open it in an editor, read [Fetched branches](docs/security.md#fetched-branches).
 
-The sandbox stops 30 seconds after its last session, such as your `sbx env run` shell, disconnects, and agents running in it stop too. `sbx stop sbx-kit-shell-myrepo` stops it sooner. A stop removes the remote. The remote will be re-created and updated when the sandbox is running.
+The sandbox stops 30 seconds after its last session, such as your `sbx env run` shell, disconnects, and agents running in it stop too. `sbx stop shell-myrepo` stops it sooner. A stop removes the remote. The remote will be re-created and updated when the sandbox is running.
 
 ## Documentation
 

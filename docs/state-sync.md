@@ -1,8 +1,8 @@
 # State sync
 
-Claude Code keeps its session transcripts and per-project memory under `$HOME`. In a sandbox that is the sandbox's `$HOME`: the host never sees it, and a sandbox with another name starts cold. [`scripts/sbx-state-sync.sh`](../scripts/sbx-state-sync.sh) carries that state out to your Mac and back into sandboxes, by hand, when you decide to.
+Claude Code keeps its session transcripts and per-project memory under `~/.claude/projects`. In a sandbox, `sbx/claude-sessions` puts that directory on your Mac, but in a place sbx owns, not in your `~/.claude`, see [Recreate](sandboxes.md#recreate). [`scripts/sbx-state-sync.sh`](../scripts/sbx-state-sync.sh) carries the state between there and your own `~/.claude/projects`, by hand, when you decide to: reading sandbox transcripts in Claude Code on the Mac, seeding the sandboxes with host sessions, and letting memory compound.
 
-Claude Code's state volumes survive `sbx env rm` for a sandbox of the same name, see [Recreate](sandboxes.md#recreate). The script is for the rest: reading sandbox transcripts on the Mac, seeding a sandbox with a different name, and letting memory compound.
+Every sandbox with `sbx/claude-sessions` shares the one directory, so a sync with any running sandbox reaches the state of all of them.
 
 ## Setup
 
@@ -12,8 +12,8 @@ Claude Code's state volumes survive `sbx env rm` for a sandbox of the same name,
 ## Usage
 
 ```sh
-sbx-state-sync.sh -n sbx-kit-shell-myrepo          # list what would move, per direction
-sbx-state-sync.sh sbx-kit-shell-myrepo             # move it
+sbx-state-sync.sh -n shell-myrepo          # list what would move, per direction
+sbx-state-sync.sh shell-myrepo             # move it
 ```
 
 The argument is the sandbox name from `sbx ls`. A stopped sandbox is started. The output itemizes every file that crossed, in rsync's `--itemize-changes` form (`>f` pulled, `<f` pushed), and every memory index line each side gains (`>` host, `<` sandbox).
