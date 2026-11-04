@@ -4,7 +4,7 @@ Set the `dotfiles` arg of the `kits/config` entry in `~/.sbxenv.yaml` to your do
 
 The value can be an `https://` URL or a shorthand that chezmoi expands to one: `user`, `user/repo`, `sr.ht/~user[/repo]`, or `site/user[/repo]` such as `gitlab.com/user/repo`.
 
-During the apply, the sandbox can reach GitHub, `deb.debian.org` and PyPI. To reach another forge or host your dotfiles download from, [allow it](#allow-more-hosts).
+During the apply, the sandbox can reach GitHub and PyPI. The apt sources, `deb.debian.org` and `dhi.io`, are open at all times. To reach another forge or host your dotfiles download from, [allow it](#allow-more-hosts).
 
 ## Allow more hosts
 

@@ -8,7 +8,7 @@ kind: mixin
 
 # Bump on any change, pin bumps included, so `sbx env plan` shows the kit as
 # changed.
-version: "0.1.1"
+version: "0.1.2"
 
 # Why uv: the shell kit's /usr/bin/uv aborts with "<jemalloc>: Unsupported
 # system page size" on 16K-page kernels (Apple-silicon VMs). jemalloc fixes
@@ -72,10 +72,9 @@ capabilities:
 
   - type: com.docker.sandbox/network-policy@1
     config:
-      # Open only while install hooks run: Debian for apt-get (the image's
-      # dhi.io source stays blocked, so apt-get update may warn), and for the
-      # dotfiles, GitHub clones and downloads and PyPI for `uv run --script`.
-      # Other forges need their hosts in the global sbx policy.
+      # Open only while install hooks run, for the dotfiles: GitHub clones
+      # and downloads, and PyPI for `uv run --script`. Other forges need
+      # their hosts in the global sbx policy.
       install:
         allow:
           - github.com
@@ -83,14 +82,16 @@ capabilities:
           - objects.githubusercontent.com
           - release-assets.githubusercontent.com
           - raw.githubusercontent.com
-          - deb.debian.org
           - pypi.org
           - files.pythonhosted.org
-      # For Copilot's self-update: copilot-mixin allows github.com but not
-      # the host its release downloads redirect to. uv's run-time downloads
-      # (PyPI) are left to the global sbx policy.
+      # The image's apt sources, both, since apt-get update fails on any it
+      # can't reach. release-assets for Copilot's self-update: copilot-mixin
+      # allows github.com but not the host its downloads redirect to. uv's
+      # run-time downloads (PyPI) are left to the global sbx policy.
       runtime:
         allow:
+          - deb.debian.org
+          - dhi.io
           - release-assets.githubusercontent.com
 
   # Hooks run in list order, after the agent mixins' (integrates above).
@@ -125,10 +126,9 @@ capabilities:
           user: "0"
           description: Register less and vim.basic as the pager, editor, vi and vim alternatives
 
-        # For scripts/sbx-state-sync.sh (`rsync -e 'sbx exec -i'`). apt-get
-        # update may fail over the blocked dhi.io source, so its status is
-        # ignored. Only the sync script needs rsync, and it reports a missing
-        # one, so a failed install is reported, not fatal.
+        # For scripts/sbx-state-sync.sh (`rsync -e 'sbx exec -i'`). Only the
+        # sync script needs rsync, and it reports a missing one, so a failed
+        # install is reported, not fatal.
         - command: |
             set -u
             export DEBIAN_FRONTEND=noninteractive
