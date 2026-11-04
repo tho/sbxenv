@@ -20,7 +20,7 @@ kits:
   # Read the registry descriptor before bumping.
   # - docker.io/sbx/copilot-mixin:1.0.86
   # - docker.io/sbx/cursor-mixin:2026.09.18-9a7762b
-  - source: git+https://github.com/tho/sbxenv.git#ref=aa8e64ec7744c74e791f6f5eaf25b03a0aa643e3&dir=kits/config
+  - source: git+https://github.com/tho/sbxenv.git#ref=bd730becd6e46a154210eb5219d1e81c752ea17f&dir=kits/config
     args:
       # Dotfiles repo for `chezmoi init --apply` at create, e.g. you/dotfiles
       # (forms: kits/config/config.yaml). Empty = skip.
