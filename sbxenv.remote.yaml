@@ -19,7 +19,7 @@ kits:
   - docker.io/sbx/codex-mixin:0.166.0
   # Read the registry descriptor before bumping.
   # - docker.io/sbx/cursor-mixin:2026.09.18-9a7762b
-  - source: git+https://github.com/tho/sbxenv.git#ref=bd730becd6e46a154210eb5219d1e81c752ea17f&dir=kits/config
+  - source: git+https://github.com/tho/sbxenv.git#ref=38a1c1184a8615c2b09b80279dea6be657609bb9&dir=kits/config
     args:
       # Dotfiles repo for `chezmoi init --apply` at create, e.g. you/dotfiles
       # (forms: kits/config/config.yaml). Empty = skip.
