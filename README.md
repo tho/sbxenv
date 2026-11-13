@@ -12,9 +12,9 @@ Agents work in a private clone of the repo, inside a microVM.
 
 | Kit | Adds |
 |---|---|
-| `sbx/shell` | The base sandbox: bash, git, `gh`, node and python |
+| `sbx/shell` | The base sandbox: bash, git, `gh`, Docker and python |
 | `sbx/{claude,codex}-mixin` | The `claude` and `codex` agents |
-| `sbx/claude-sessions` | Keeps Claude Code's sessions and memory on your Mac, shared by every sandbox and kept across `sbx env rm` |
+| `sbx/claude-sessions` | Keeps Claude Code's sessions and memory on your Mac, per sandbox name and kept across `sbx env rm` |
 | `sbx/cursor-mixin` | The `cursor-agent` agent. Commented out; uncomment to add it |
 | [`kits/config`](kits/config) | Git identity and other cross-cutting setup; [chezmoi](https://chezmoi.io), and your dotfiles applied at create; [uv](https://docs.astral.sh/uv/), because the base image's uv crashes on Apple silicon; rsync, for [`scripts/sbx-state-sync.sh`](scripts/sbx-state-sync.sh), which carries agent sessions and memory between sandbox and host |
 

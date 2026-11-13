@@ -4,7 +4,7 @@
 
 For a second sandbox on the same repo, pass a name, as in `sbx env run --name myrepo-spike`. Pass the same `--name` to every `sbx env` command for that sandbox.
 
-Two repos with the same directory name get the same sandbox name. Claude Code's sessions and memory are shared by all sandboxes anyway, see [Recreate](#recreate). Give one of them its own `--name` on every `sbx env` command. Otherwise `sbx env run --force` in the second repo silently attaches to the first repo's sandbox.
+Two repos with the same directory name get the same sandbox name, and with it the same Claude Code sessions and memory, see [Recreate](#recreate). Give one of them its own `--name` on every `sbx env` command. Otherwise `sbx env run --force` in the second repo silently attaches to the first repo's sandbox.
 
 ## The clone
 
@@ -36,9 +36,14 @@ The secret isn't injected on `uploads.github.com`, so `gh release upload` doesn'
 
 `sbx env rm` deletes the sandbox and its clone, so fetch first. `sbx env run` then creates a new one.
 
-With `sbx/claude-sessions` in `~/.sbxenv.yaml`, Claude Code's `~/.claude/projects`, `sessions`, `todos`, `shell-snapshots` and `statsig` are symlinks into `/home/agent/claude-history`, a directory on your Mac that sbx owns and every sandbox with that kit shares. `sbx env rm` leaves it in place, so any new sandbox gets the sessions and memory back, whatever its name. It lives under `~/Library/Application Support/com.docker.sandboxes/sandboxes/kit-host-mounts/`; `sbx inspect <name>` shows the exact path under `host_mounts`. The rest of `$HOME` starts fresh.
+With `sbx/claude-sessions` in `~/.sbxenv.yaml`, Claude Code's `~/.claude/projects`, `sessions`, `todos`, `shell-snapshots` and `statsig` are symlinks into `/home/agent/claude-history/<sandbox name>`, a directory on your Mac that sbx owns. `sbx env rm` leaves it in place, so a new sandbox with the same name gets the sessions and memory back. A sandbox with another name starts without them. The directory lives under `~/Library/Application Support/com.docker.sandboxes/sandboxes/kit-host-mounts/`; `sbx inspect <name>` shows the exact path under `host_mounts`. The rest of `$HOME` starts fresh.
 
-Before sbx 0.51.0, the Claude mixin kept that state in volumes tied to the sandbox name. A sandbox created then keeps its volumes, but nothing moves them into the shared directory. Pull them with [`sbx-state-sync.sh`](state-sync.md) before removing it, then push into a new sandbox.
+State from before these per-name directories stays where it was, and nothing moves it:
+
+- `sbx/claude-sessions` 1.0.0 kept one set of directories at the top of `claude-history`, shared by every sandbox.
+- Before sbx 0.51.0, the Claude mixin kept the state in volumes tied to the sandbox name.
+
+Pull either with [`sbx-state-sync.sh`](state-sync.md) before removing the old sandbox, then push into a new one.
 
 ## Upgrade
 

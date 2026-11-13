@@ -18,7 +18,7 @@ Patterns to copy from `config`:
 | Pinned binary, shadowing a base-image one through `PATH` order | uv in the recipe |
 | Root `install` hook that runs `apt-get` | rsync |
 | Create-time arg passed to a hook through `env:` | `dotfiles` |
-| `git-identity@1`, `agent-skills@1`, `network-policy@1` | `capabilities` |
+| `git-identity@1`, `network-policy@1` | `capabilities` |
 | `install.allow` for an apt source and a git clone | `network-policy@1` |
 
 ## Descriptor
@@ -52,7 +52,7 @@ Follow [`config.dockerfile`](config/config.dockerfile):
 ## Capabilities
 
 - `network-policy@1`: `install.allow` hosts are open only while `install` hooks run. `runtime.allow` hosts stay open.
-- `agent-skill@1` bundles one skill from the image. `agent-skills@1` declares a skills directory. Each bundled skill appears in every skills directory that the agent mixins and `config` declare. An `agent-skill@1` `path` can't use a create-time arg or `${{ kit.env.* }}`.
+- `agent-skill@1` bundles one skill from the image. `agent-skills@1` declares a skills directory. Each bundled skill appears in every skills directory that the agent mixins declare. An `agent-skill@1` `path` can't use a create-time arg or `${{ kit.env.* }}`.
 
 ## Versions
 

@@ -2,7 +2,7 @@
 
 Claude Code keeps its session transcripts and per-project memory under `~/.claude/projects`. In a sandbox, `sbx/claude-sessions` puts that directory on your Mac, but in a place sbx owns, not in your `~/.claude`, see [Recreate](sandboxes.md#recreate). [`scripts/sbx-state-sync.sh`](../scripts/sbx-state-sync.sh) carries the state between there and your own `~/.claude/projects`, by hand, when you decide to: reading sandbox transcripts in Claude Code on the Mac, seeding the sandboxes with host sessions, and letting memory compound.
 
-Every sandbox with `sbx/claude-sessions` shares the one directory, so a sync with any running sandbox reaches the state of all of them.
+Each sandbox name has its own directory there, so a sync reaches only the named sandbox's state.
 
 ## Setup
 
