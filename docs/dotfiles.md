@@ -26,14 +26,14 @@ During the apply, the sandbox can reach GitHub. The apt sources, `deb.debian.org
          # Open only while install hooks run, such as the dotfiles apply.
          install:
            allow:
-             - example.dev
+             - example.com
          # Open while the sandbox runs, such as for a tool's self-update.
          runtime:
            allow:
-             - example.dev
+             - example.com
    ```
 
-2. Replace `example.dev` with your hosts. Patterns such as `*.example.dev` and `example.dev:443` also work. Drop the `runtime` block if the tools need the hosts only to install.
+2. Replace `example.com` with your hosts. Patterns such as `*.example.com` and `example.com:443` also work. Drop the `runtime` block if the tools need the hosts only to install.
 3. In `~/.sbxenv.yaml`, uncomment the `/absolute/path/to/egress` entry under `kits:` and set it to the directory's absolute path. sbx doesn't expand `~`.
 4. Create a new sandbox. Existing sandboxes keep their allow lists until you [recreate](sandboxes.md#recreate) them.
 
