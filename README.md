@@ -15,7 +15,6 @@ Agents work in a private clone of the repo, inside a microVM.
 | `sbx/shell` | The base sandbox: bash, git, `gh`, node and python |
 | `sbx/{claude,codex}-mixin` | The `claude` and `codex` agents |
 | `sbx/claude-sessions` | Keeps Claude Code's sessions and memory on your Mac, shared by every sandbox and kept across `sbx env rm` |
-| `sbx/copilot-mixin` | The `copilot` agent. Commented out; uncomment to add it |
 | `sbx/cursor-mixin` | The `cursor-agent` agent. Commented out; uncomment to add it |
 | [`kits/config`](kits/config) | Git identity and other cross-cutting setup; [chezmoi](https://chezmoi.io), and your dotfiles applied at create; [uv](https://docs.astral.sh/uv/), because the base image's uv crashes on Apple silicon; rsync, for [`scripts/sbx-state-sync.sh`](scripts/sbx-state-sync.sh), which carries agent sessions and memory between sandbox and host |
 
@@ -65,10 +64,7 @@ Store a secret for each agent you use:
 |---|---|
 | Claude Code | `sbx secret set anthropic` (API key); `/login` inside Claude Code for OAuth ([details](https://docs.docker.com/ai/sandboxes/agents/claude-code/#authentication)) |
 | Codex | `sbx secret set openai [--oauth]` ([details](https://docs.docker.com/ai/sandboxes/agents/codex/#authentication)) |
-| Copilot | `sbx secret set copilot`, with a fine-grained PAT that has "Copilot Requests" ([details](https://docs.docker.com/ai/sandboxes/agents/copilot/#authentication))|
 | Cursor | `sbx secret set cursor`, with an API key or interactively on first run ([details](https://docs.docker.com/ai/sandboxes/agents/cursor/#authentication))|
-
-Without the `copilot` secret, Copilot uses the `github` secret.
 
 For `gh` and git in the sandbox, also store your `gh` token. It gives the agents in every sandbox the token's full reach, so read [Credentials](docs/security.md#credentials) first:
 
@@ -85,7 +81,7 @@ Answer the first run's approval prompt yourself. With `--force` or `--detach`, s
 You get a bash shell in the clone, at the same path as your checkout. Start an agent there:
 
 ```sh
-claude    # or codex, copilot
+claude    # or codex
 ```
 
 ## Get the work back

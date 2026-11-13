@@ -20,7 +20,6 @@ kits:
   - docker.io/sbx/claude-sessions:1.0.0
   - docker.io/sbx/codex-mixin:0.166.0
   # Read the registry descriptor before bumping.
-  # - docker.io/sbx/copilot-mixin:1.0.86
   # - docker.io/sbx/cursor-mixin:2026.09.18-9a7762b
   - source: /path/to/sbxenv/kits/config
     args:

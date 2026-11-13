@@ -1,14 +1,14 @@
 # syntax=docker/sandbox-kit:3
 schemaVersion: "3"
 displayName: sbxenv config
-description: "Sandbox setup for sbxenv: pinned, SHA-256-verified chezmoi and uv binaries at /usr/local/bin, your dotfiles applied at create when the dotfiles arg is set, rsync from Debian's repositories, git identity, bash login shell, less and vim as the default pager and editor, git ignores for in-repo worktrees, Copilot and Cursor skills directories, and egress for Copilot's self-update."
+description: "Sandbox setup for sbxenv: pinned, SHA-256-verified chezmoi and uv binaries at /usr/local/bin, your dotfiles applied at create when the dotfiles arg is set, rsync from Debian's repositories, git identity, bash login shell, less and vim as the default pager and editor, git ignores for in-repo worktrees and a Cursor skills directory."
 sourceUrl: https://github.com/tho/sbxenv
 
 kind: mixin
 
 # Bump on any change, pin bumps included, so `sbx env plan` shows the kit as
 # changed.
-version: "0.1.2"
+version: "0.1.3"
 
 # Why uv: the shell kit's /usr/bin/uv aborts with "<jemalloc>: Unsupported
 # system page size" on 16K-page kernels (Apple-silicon VMs). jemalloc fixes
@@ -48,7 +48,7 @@ provides:
 # The agent mixins' hooks, when present, run first: claude-mixin and
 # codex-mixin overwrite ~/.claude/settings.json and ~/.codex/config.toml, so
 # dotfiles that edit either file aren't clobbered.
-integrates: ["claude", "codex", "copilot", "cursor"]
+integrates: ["claude", "codex", "cursor"]
 
 capabilities:
   # The host's git user.name and user.email, set before the hooks run so
@@ -58,13 +58,8 @@ capabilities:
     optional: true
     description: Attribute commits to your Git identity
 
-  # Skills directories for Copilot and Cursor, whose mixins declare none; drop
-  # these once they do. Their install hooks chown the ~/.copilot and ~/.cursor
-  # these binds create.
-  - type: com.docker.sandbox/agent-skills@1
-    optional: true
-    config:
-      path: /home/agent/.copilot/skills
+  # A skills directory for Cursor, whose mixin declares none; drop this once it
+  # does. Its install hook chowns the ~/.cursor this bind creates.
   - type: com.docker.sandbox/agent-skills@1
     optional: true
     config:
@@ -85,14 +80,12 @@ capabilities:
           - pypi.org
           - files.pythonhosted.org
       # The image's apt sources, both, since apt-get update fails on any it
-      # can't reach. release-assets for Copilot's self-update: copilot-mixin
-      # allows github.com but not the host its downloads redirect to. uv's
-      # run-time downloads (PyPI) are left to the global sbx policy.
+      # can't reach. uv's run-time downloads (PyPI) are left to the global sbx
+      # policy.
       runtime:
         allow:
           - deb.debian.org
           - dhi.io
-          - release-assets.githubusercontent.com
 
   # Hooks run in list order, after the agent mixins' (integrates above).
   - type: com.docker.sandbox/lifecycle@1

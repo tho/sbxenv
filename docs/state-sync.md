@@ -67,5 +67,5 @@ To keep conflicts rare:
 
 ## Limitations
 
-- Only Claude Code. Codex, Copilot and Cursor are not synced; a Codex profile was designed but not tested, so it is not shipped.
+- Only Claude Code. Codex and Cursor are not synced; a Codex profile was designed but not tested, so it is not shipped.
 - Deleting a memory file or an index line sticks only if it is deleted on both sides.
