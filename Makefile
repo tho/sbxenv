@@ -1,12 +1,8 @@
-SHELL_SCRIPTS := $(shell git ls-files '*.sh')
 DOCKERFILES := $(shell git ls-files '*.dockerfile' '*Dockerfile')
 
-.PHONY: lint shellcheck hadolint envfiles stale-kits
+.PHONY: lint hadolint envfiles stale-kits
 
-lint: shellcheck hadolint envfiles
-
-shellcheck:
-	shellcheck $(SHELL_SCRIPTS)
+lint: hadolint envfiles
 
 hadolint:
 	hadolint $(DOCKERFILES)

@@ -8,27 +8,24 @@
 schemaVersion: "1"
 agent: shell
 kits:
-  # Docker publishes its kits under sbx/ since v0.51.0; the docker/sbx-kit-*
-  # kits are frozen at their last tags.
   - docker.io/sbx/shell:1.1.0
   # Mixin tags pin the kit (hooks, allow list) and the agent's starting
   # version; the agents then update themselves. Bump on upgrade.
   - docker.io/sbx/claude-mixin:2.1.323
-  # Keeps ~/.claude/projects and siblings in a host directory per sandbox
-  # name, which survives sbx env rm (docs/sandboxes.md: Recreate). Drop it
-  # for a fresh $HOME every time.
-  - docker.io/sbx/claude-sessions:1.1.0
   - docker.io/sbx/codex-mixin:0.167.2
-  # Read the registry descriptor before bumping.
   # - docker.io/sbx/cursor-mixin:2026.11.11-043ef28
+  # Keep the agents' sessions on the host, per sandbox name, across
+  # sbx env rm (docs/sandboxes.md: Recreate). Each needs its agent's mixin.
+  - docker.io/sbx/claude-sessions:1.1.0
+  - docker.io/sbx/codex-sessions:1.1.0
+  # - docker.io/sbx/cursor-sessions:1.0.0
   - source: /path/to/sbxenv/kits/config
     args:
       # Dotfiles repo for `chezmoi init --apply` at create, e.g. you/dotfiles
       # (forms: kits/config/config.yaml). Empty = skip.
       dotfiles: ""
-  # Your own kit allowing hosts that your dotfiles or tools need beyond the
-  # kits' allow lists, such as an installer's download host. Absolute path
-  # (docs/dotfiles.md: Allow more hosts).
+  # Your own kit, by absolute path, allowing hosts your dotfiles or tools
+  # need (docs/dotfiles.md: Allow more hosts).
   # - /absolute/path/to/egress
 workspace:
   path: ${{ env.projectDir }}

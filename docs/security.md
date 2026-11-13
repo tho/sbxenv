@@ -18,11 +18,11 @@ A sandbox can reach the hosts in your global sbx policy, plus the hosts its kits
 
 A kit's hooks run in every sandbox that uses it, with the agents' network reach and credentials. `kit.allowedSources` is the list of places sbx installs kits from. Adding `github.com/tho/` lets any sbxenv file you run, including [a repo's own](#a-repos-own-sbxenvyaml), use a kit from any repo under that GitHub account, at any ref.
 
-Each `ref=` in `sbxenv.remote.yaml` is a full commit SHA, so it names exactly the code you can read at that commit, and nobody can move it. The file itself comes from `main`, so read the refs in your copy, not on GitHub.
+Each `ref=` in `sbxenv.remote.yaml` is a full commit SHA, so nobody can change the code it names. The file itself comes from `main`, so check the `ref=` in your copy, not on GitHub.
 
 ## Fetched branches
 
-An agent's branch can change `sbxenv.yaml`, `.claude/`, `.hunk/`, `.vscode/`, `.envrc` and build scripts. Read it like a stranger's pull request before you build it, run it, or open it in an editor or a host agent. `hunk diff main...<branch>` runs nothing from it as long as you haven't checked it out.
+An agent's branch can change `sbxenv.yaml`, `.claude/`, `.envrc`, etc. and build scripts. Read it like a stranger's pull request before you build it, run it, or open it in an editor or a host agent. `git diff main...<branch>` runs nothing from it as long as you haven't checked it out.
 
 ## A repo's own sbxenv.yaml
 

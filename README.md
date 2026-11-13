@@ -14,20 +14,20 @@ Agents work in a private clone of the repo, inside a microVM.
 |---|---|
 | `sbx/shell` | The base sandbox: bash, git, `gh`, Docker and python |
 | `sbx/{claude,codex}-mixin` | The `claude` and `codex` agents |
-| `sbx/claude-sessions` | Keeps Claude Code's sessions and memory on your Mac, per sandbox name and kept across `sbx env rm` |
-| `sbx/cursor-mixin` | The `cursor-agent` agent. Commented out; uncomment to add it |
-| [`kits/config`](kits/config) | Git identity and other cross-cutting setup; [chezmoi](https://chezmoi.io), and your dotfiles applied at create; [uv](https://docs.astral.sh/uv/), because the base image's uv crashes on Apple silicon; rsync, for [`scripts/sbx-state-sync.sh`](scripts/sbx-state-sync.sh), which carries agent sessions and memory between sandbox and host |
+| `sbx/{claude,codex}-sessions` | Keep Claude Code's sessions and memory, and Codex's sessions, on your Mac, per sandbox name, across `sbx env rm` |
+| `sbx/cursor-{mixin,sessions}` | The `cursor-agent` agent and its chats, commented out |
+| [`kits/config`](kits/config) | Your git identity, and your dotfiles applied with [chezmoi](https://chezmoi.io) at create |
 
-You can drop any of Docker's kits you do not want or need from `~/.sbxenv.yaml`.
+Remove any kit but `sbx/shell` from `~/.sbxenv.yaml` if you don't want it.
 
 ## Requirements
 
-- macOS with [sbx](https://docs.docker.com/ai/sandboxes/) 0.51.0 or later, signed in with `sbx login`.
-- Docker Desktop, running whenever you create a sandbox from a checkout.
+- macOS with [sbx](https://docs.docker.com/ai/sandboxes/) 0.53.0 or later, signed in with `sbx login`.
+- A way to build `kits/config` at create: `export SBX_KIT_BUILDER=sandbox` in your shell profile, which builds it in a sandbox, or Docker Desktop running.
 
 ## Install
 
-Install either from GitHub, which needs no checkout, or a checkout, which lets you change the kits. Both write `~/.sbxenv.yaml`.
+Install from GitHub, or from a checkout if you want to change the kit. Both write `~/.sbxenv.yaml`.
 
 ### Without a checkout
 
@@ -37,7 +37,7 @@ Download `sbxenv.remote.yaml`. It pins `kits/config` to a commit of this repo on
 curl -fsSL -o ~/.sbxenv.yaml https://raw.githubusercontent.com/tho/sbxenv/main/sbxenv.remote.yaml
 ```
 
-sbx installs kits only from `docker.io/` until you allow other sources. Allow this repo's owner once.
+sbx installs kits only from `docker.io/` until you allow other sources. Allow this repo's owner once:
 
 ```sh
 sbx settings set kit.allowedSources '["docker.io/","github.com/tho/"]'
@@ -54,7 +54,7 @@ git clone https://github.com/tho/sbxenv && cd sbxenv
 sed "s|/path/to/sbxenv|$PWD|" sbxenv.example.yaml > ~/.sbxenv.yaml
 ```
 
-sbx builds `kits/config` from the checkout as it is at create, so your changes to it take effect in the next sandbox you create.
+sbx builds `kits/config` from the checkout at create, so your changes take effect in the next sandbox you create.
 
 ### Secrets
 
@@ -64,9 +64,9 @@ Store a secret for each agent you use:
 |---|---|
 | Claude Code | `sbx secret set anthropic` (API key); `/login` inside Claude Code for OAuth ([details](https://docs.docker.com/ai/sandboxes/agents/claude-code/#authentication)) |
 | Codex | `sbx secret set openai [--oauth]` ([details](https://docs.docker.com/ai/sandboxes/agents/codex/#authentication)) |
-| Cursor | `sbx secret set cursor`, with an API key or interactively on first run ([details](https://docs.docker.com/ai/sandboxes/agents/cursor/#authentication))|
+| Cursor | `sbx secret set cursor` (API key), or sign in on first run ([details](https://docs.docker.com/ai/sandboxes/agents/cursor/#authentication)) |
 
-For `gh` and git in the sandbox, also store your `gh` token. It gives the agents in every sandbox the token's full reach, so read [Credentials](docs/security.md#credentials) first:
+For `gh` and `git push` in the sandbox, also store your `gh` token. Agents in every sandbox get the token's full reach, so read [Credentials](docs/security.md#credentials) first:
 
 ```sh
 sbx secret set github --command 'gh auth token'
@@ -86,7 +86,7 @@ claude    # or codex
 
 ## Get the work back
 
-The sandbox is named after the repo's directory. While it runs, your host checkout has a remote for it. Fetch a branch and review it as usual.
+The sandbox is named `shell-<repo directory>`. While it runs, your host checkout has a `sandbox-<name>` remote. Fetch a branch and review it as usual:
 
 ```sh
 git fetch sandbox-shell-myrepo
@@ -96,16 +96,14 @@ git branch feat-x refs/sandboxes/shell-myrepo/feat-x
 
 Before you build the branch or open it in an editor, read [Fetched branches](docs/security.md#fetched-branches).
 
-The sandbox stops 30 seconds after its last session, such as your `sbx env run` shell, disconnects, and agents running in it stop too. `sbx stop shell-myrepo` stops it sooner. A stop removes the remote. The remote will be re-created and updated when the sandbox is running.
+The sandbox stops 30 seconds after its last session disconnects, such as when you exit the `sbx env run` shell, and its agents stop with it. `sbx stop shell-myrepo` stops it at once. The remote exists only while the sandbox runs; fetched branches stay under `refs/sandboxes/`.
 
 ## Documentation
 
 - [Sandboxes](docs/sandboxes.md): names, the clone, disks, GitHub, recreating, upgrading
-- [Dotfiles](docs/dotfiles.md): apply your chezmoi repo in every new sandbox, and allow the hosts its tools need
-- [State sync](docs/state-sync.md): carry Claude Code sessions and memory between a sandbox and your Mac
-- [Security](docs/security.md): what agents can read and reach, fetched branches and a repo's own `sbxenv.yaml`
-- [Troubleshooting](docs/troubleshooting.md): error messages and their fixes
-- [Kits](kits/README.md): write a kit or bump a pinned version
+- [Dotfiles](docs/dotfiles.md): apply your chezmoi repo in every new sandbox, and allow the hosts it needs
+- [Security](docs/security.md): what agents can read and reach, fetched branches, a repo's own `sbxenv.yaml`
+- [Kits](kits/README.md): change the kit, bump a pin, publish
 
 ## License
 

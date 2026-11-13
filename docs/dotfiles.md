@@ -4,11 +4,11 @@ Set the `dotfiles` arg of the `kits/config` entry in `~/.sbxenv.yaml` to your do
 
 The value can be an `https://` URL or a shorthand that chezmoi expands to one: `user`, `user/repo`, `sr.ht/~user[/repo]`, or `site/user[/repo]` such as `gitlab.com/user/repo`.
 
-During the apply, the sandbox can reach GitHub and PyPI. The apt sources, `deb.debian.org` and `dhi.io`, are open at all times. To reach another forge or host your dotfiles download from, [allow it](#allow-more-hosts).
+During the apply, the sandbox can reach GitHub. The apt sources, `deb.debian.org` and `dhi.io`, are always open. For another forge, or a host your dotfiles download from, [allow it](#allow-more-hosts).
 
 ## Allow more hosts
 
-sbxenv's allow list stays minimal, so a tool your dotfiles install may need a host it doesn't allow, such as an installer's download site. `~/.sbxenv.yaml` has no field for hosts, so allow them in a kit of your own and add the kit there.
+`~/.sbxenv.yaml` has no field for hosts, so allow them in a kit of your own:
 
 1. Create a directory outside any repo, such as `~/.config/sbxenv/egress`, with this `egress.yaml` in it. The file name must match the directory name.
 
@@ -37,13 +37,13 @@ sbxenv's allow list stays minimal, so a tool your dotfiles install may need a ho
 3. In `~/.sbxenv.yaml`, uncomment the `/absolute/path/to/egress` entry under `kits:` and set it to the directory's absolute path. sbx doesn't expand `~`.
 4. Create a new sandbox. Existing sandboxes keep their allow lists until you [recreate](sandboxes.md#recreate) them.
 
-The hosts apply only to sandboxes created from your `~/.sbxenv.yaml`. To allow a host for every sandbox instead, run `sbx policy allow network <host>`. For one running sandbox, add `--sandbox <name>`.
+To allow a host without a kit, run `sbx policy allow network <host>`. That applies to every sandbox; add `--sandbox <name>` for one running sandbox.
 
 ## Writing dotfiles for the sandbox
 
 - The apply is unattended (`--promptDefaults`), so every prompt in `.chezmoi.toml.tmpl` needs a default.
 - Your git identity is set before the apply, so prompts can default to `git config --global user.name` and `user.email`.
 - The agent mixins write their settings before the apply. Merge your settings into them with `modify_` scripts.
-- Don't ship files under `~/.claude/projects`, `sessions`, `todos`, `shell-snapshots` or `statsig`. `sbx/claude-sessions` replaces those directories with symlinks into a host directory, and its install hook fails the create when one of them is a nonempty directory. It may run before or after the apply.
-- The apply runs from `$HOME`, before sbx clones the workspace. On every boot, the kit reruns your scripts, not your files, from the workspace with `chezmoi apply --include=scripts`, so `.chezmoi.commandDir` is the workspace. Write project-level config, such as `.claude/settings.local.json`, from a `run_` script that is safe to repeat. The rerun reaches only hosts in your runtime policy.
-- Scripts that install tools a kit may already provide, such as uv, should skip the install when the tool is already on `PATH`.
+- Don't manage the directories that the [session kits](sandboxes.md#recreate) keep on the host. They are symlinks, and a create fails when one is already a nonempty directory.
+- The apply runs once, at create, from the workspace clone, so `.chezmoi.commandDir` is the workspace. Write project-level config, such as `.claude/settings.local.json`, from a script. Nothing reruns on later boots; run `chezmoi apply` in the sandbox yourself.
+- The base image's `/usr/bin/uv` aborts on Apple silicon with `<jemalloc>: Unsupported system page size`. If you need uv, install Astral's release from your dotfiles, ahead of `/usr/bin` on `PATH`.
