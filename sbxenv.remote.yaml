@@ -18,7 +18,7 @@ kits:
   - docker.io/sbx/codex-sessions:1.1.0
   # - docker.io/sbx/cursor-sessions:1.0.0
   # - docker.io/sbx/pi-sessions:1.1.0
-  - source: git+https://github.com/tho/sbxenv.git#ref=c1f093125f08ea2e580f9f935f30df440965d17a&dir=kits/config
+  - source: git+https://github.com/tho/sbxenv.git#ref=3a4aa756198b9e29c1c67d3c128ebebc314ccd6f&dir=kits/config
     args:
       # Dotfiles repo for `chezmoi init --apply` at create, e.g. you/dotfiles
       # (forms: kits/config/config.yaml). Empty = skip.
