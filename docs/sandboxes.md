@@ -35,7 +35,16 @@ With the `github` secret set, agents can push to GitHub and open pull requests w
 
 `sbx env rm` deletes the sandbox and its clone, so fetch first. `sbx env run` then creates a new one.
 
-Only the agents' sessions survive, in directories on your Mac, one per sandbox name. A new sandbox with the same name gets them back. `sbx inspect <name>` shows the directories under `host_mounts`.
+To keep uncommitted work and ignored files too, carry the whole clone across as a tar archive on your Mac. Run `sbx setup ssh` once, then, from the host checkout:
+
+```sh
+scripts/sbx-carry.sh save && sbx env rm && sbx env run --detach
+scripts/sbx-carry.sh restore
+```
+
+It picks the sandbox name as `sbx env run` does; pass `--name` if you created the sandbox with one. `restore` replaces everything in the new clone, `.git` included, then deletes the archive, which may hold secrets (`-k` keeps it). Until then it sits in `~/.cache/sbx-carry/`, and `save` asks before overwriting it.
+
+Otherwise only the agents' sessions survive, in directories on your Mac, one per sandbox name. A new sandbox with the same name gets them back. `sbx inspect <name>` shows the directories under `host_mounts`.
 
 | Kit | Keeps |
 |---|---|
