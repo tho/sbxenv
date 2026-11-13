@@ -21,6 +21,9 @@
 # archive that still exists is therefore work not yet restored, and save asks
 # before overwriting it.
 #
+# restore only touches a sandbox created in clone mode. Otherwise the same
+# path in the sandbox is this checkout, and it refuses.
+#
 # Transport: tar streamed over ssh to <name>.sbx, so run `sbx setup ssh` once.
 # Requires sbx, ssh and git on the host; runs under macOS's bash 3.2.
 set -euo pipefail
@@ -120,10 +123,12 @@ readonly name_re='^[A-Za-z0-9][A-Za-z0-9.-]*$'
 readonly host="$sandbox.sbx"
 readonly archive=${archive:-${XDG_CACHE_HOME:-$HOME/.cache}/sbx-carry/$sandbox.tgz}
 
+[[ $dir == /?* ]] || die "unexpected checkout path: $dir"
+
 # ssh joins its arguments into one string for the remote shell, so the path
-# is quoted here.
-remote_dir=$(printf '%q' "$dir")
-readonly remote_dir
+# is single-quoted here, which any POSIX shell reads back literally.
+readonly sq="'\\''"
+readonly remote_dir="'${dir//\'/$sq}'"
 
 case $action in
   save)
@@ -134,7 +139,7 @@ case $action in
     mkdir -p -- "$(dirname -- "$archive")"
     readonly part="$archive.part"
     trap 'rm -f -- "$part"' EXIT
-    ssh -T "$host" "tar -C $remote_dir -czf - ." >"$part" ||
+    ssh -T "$host" "tar -C $remote_dir --one-file-system -czf - ." >"$part" ||
       die "saving $host:$dir failed"
     tar -tzf "$part" >/dev/null || die "archive is unreadable, kept nothing"
     mv -f -- "$part" "$archive"
@@ -145,10 +150,35 @@ case $action in
     [[ -r $archive ]] || die "no archive at $archive"
     confirm "Replace everything in $host:$dir with $archive, saved $(date -r "$archive" '+%Y-%m-%d %H:%M')?" ||
       die "aborted"
+    # The remote rm -rf must only ever hit a sandbox's private clone. In a
+    # sandbox without clone mode the same path is this checkout, mounted
+    # read-write. A probe file in the host's .git tells them apart: a clone
+    # doesn't have it, while the read-only mount of this checkout at
+    # /run/sandbox/source, which only clone mode has, does.
+    [[ -d $dir/.git ]] || die "$dir/.git is not a directory; run from the main checkout"
+    probe=$(mktemp "$dir/.git/sbx-carry-probe.XXXXXX") || die "can't write to $dir/.git"
+    readonly probe
+    trap 'rm -f -- "$probe"' EXIT
+    readonly probe_name=${probe##*/}
+    [[ $probe_name =~ ^sbx-carry-probe\.[A-Za-z0-9]+$ ]] || die "unexpected probe name"
+
     # The clone is its own disk: empty it, but keep the mount point and the
-    # filesystem's lost+found.
-    ssh -T "$host" "cd $remote_dir && find . -mindepth 1 -maxdepth 1 ! -name lost+found -exec rm -rf {} + && tar -xzpf -" <"$archive" ||
-      die "restoring to $host:$dir failed; the archive is kept"
+    # filesystem's lost+found, and stay off anything mounted inside it.
+    rc=0
+    ssh -T "$host" "
+      cd $remote_dir || exit 10
+      [ -e /run/sandbox/source/.git/$probe_name ] || exit 11
+      [ ! -e .git/$probe_name ] || exit 12
+      find . -mindepth 1 -maxdepth 1 ! -name lost+found -exec rm -rf --one-file-system {} + || exit 13
+      tar -xzpf -
+    " <"$archive" || rc=$?
+    case $rc in
+      0) ;;
+      10) die "no $dir in the sandbox; nothing was changed and the archive is kept" ;;
+      11) die "refusing: $host has no clone of this checkout; nothing was changed and the archive is kept" ;;
+      12) die "refusing: $dir in $host is this host checkout, not a clone; nothing was changed and the archive is kept" ;;
+      *) die "restoring to $host:$dir failed (exit $rc); the archive is kept" ;;
+    esac
     echo "restored $archive to $host:$dir"
     if [[ -n $keep ]]; then
       echo "kept the archive; it may hold secrets"
