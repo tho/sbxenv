@@ -10,11 +10,14 @@ kits:
   - docker.io/sbx/claude-mixin:2.1.323
   - docker.io/sbx/codex-mixin:0.167.2
   # - docker.io/sbx/cursor-mixin:2026.11.11-043ef28
+  # Pi, instead of the Claude kits: both own the anthropic credential.
+  # - docker.io/sbx/pi-mixin:1.5.2
   # Keep the agents' sessions on the host, per sandbox name, across
   # sbx env rm (docs/sandboxes.md: Recreate). Each needs its agent's mixin.
   - docker.io/sbx/claude-sessions:1.1.0
   - docker.io/sbx/codex-sessions:1.1.0
   # - docker.io/sbx/cursor-sessions:1.0.0
+  # - docker.io/sbx/pi-sessions:1.1.0
   - source: git+https://github.com/tho/sbxenv.git#ref=c1f093125f08ea2e580f9f935f30df440965d17a&dir=kits/config
     args:
       # Dotfiles repo for `chezmoi init --apply` at create, e.g. you/dotfiles

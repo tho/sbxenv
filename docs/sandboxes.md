@@ -42,6 +42,7 @@ Only the agents' sessions survive, in directories on your Mac, one per sandbox n
 | `sbx/claude-sessions` | `~/.claude/projects` (sessions and memory), `sessions`, `todos`, `shell-snapshots`, `statsig` |
 | `sbx/codex-sessions` | `~/.codex/sessions`, `archived_sessions` |
 | `sbx/cursor-sessions` | `~/.cursor/chats`, `acp-sessions` |
+| `sbx/pi-sessions` | `~/.pi/agent/sessions`, `extensions`, `skills`, `prompts`, `themes` |
 
 ## Upgrade
 

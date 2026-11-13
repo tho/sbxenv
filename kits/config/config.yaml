@@ -8,7 +8,7 @@ kind: mixin
 
 # Bump on any change, pin bumps included, so `sbx env plan` shows the kit as
 # changed.
-version: "0.1.11"
+version: "0.1.12"
 
 # The recipe's per-arch digests pin chezmoiVersion: another version fails
 # the build. To bump it, see kits/README.md.
@@ -34,10 +34,11 @@ args:
 provides:
   - "chezmoi@${{ kit.args.chezmoiVersion }}"
 
-# The agent mixins' hooks, when present, run first: claude-mixin and
-# codex-mixin overwrite ~/.claude/settings.json and ~/.codex/config.toml, so
-# dotfiles that edit either file aren't clobbered.
-integrates: ["claude", "codex", "cursor"]
+# The agent mixins' hooks, when present, run first: claude-mixin, codex-mixin
+# and pi-mixin overwrite ~/.claude/settings.json, ~/.codex/config.toml and
+# ~/.pi/agent/settings.json, so dotfiles that edit one of them aren't
+# clobbered.
+integrates: ["claude", "codex", "cursor", "pi"]
 
 capabilities:
   # The host's git user.name and user.email, set before the hooks run so

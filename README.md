@@ -16,6 +16,7 @@ Agents work in a private clone of the repo, inside a microVM.
 | `sbx/{claude,codex}-mixin` | The `claude` and `codex` agents |
 | `sbx/{claude,codex}-sessions` | Keep Claude Code's sessions and memory, and Codex's sessions, on your Mac, per sandbox name, across `sbx env rm` |
 | `sbx/cursor-{mixin,sessions}` | The `cursor-agent` agent and its chats, commented out |
+| `sbx/pi-{mixin,sessions}` | The `pi` agent and its sessions, commented out. Use instead of the Claude kits: both own the `anthropic` credential |
 | [`kits/config`](kits/config) | Your git identity, and your dotfiles applied with [chezmoi](https://chezmoi.io) at create |
 
 Remove any kit but `sbx/shell` from `~/.sbxenv.yaml` if you don't want it.
@@ -65,6 +66,7 @@ Store a secret for each agent you use:
 | Claude Code | `sbx secret set anthropic` (API key); `/login` inside Claude Code for OAuth ([details](https://docs.docker.com/ai/sandboxes/agents/claude-code/#authentication)) |
 | Codex | `sbx secret set openai [--oauth]` ([details](https://docs.docker.com/ai/sandboxes/agents/codex/#authentication)) |
 | Cursor | `sbx secret set cursor` (API key), or sign in on first run ([details](https://docs.docker.com/ai/sandboxes/agents/cursor/#authentication)) |
+| Pi | `sbx secret set anthropic`, the secret Claude Code uses; don't run `pi auth login` in the sandbox |
 
 For `gh` and `git push` in the sandbox, also store your `gh` token. Agents in every sandbox get the token's full reach, so read [Credentials](docs/security.md#credentials) first:
 
